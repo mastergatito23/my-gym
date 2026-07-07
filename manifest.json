@@ -1,0 +1,25 @@
+{
+  "name": "My GYM: Organiza tu entreno",
+  "short_name": "My GYM",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "2000x2000",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "dir": "ltr",
+  "lang": "es",
+  "categories": [
+    "health &amp;amp; fitness",
+    "productivity",
+    "utilities"
+  ],
+  "description": "Tu agenda de entreno, ahora, en aplicación para telefono. Llevatela a todas partes, bien ordenada y bonita."
+}

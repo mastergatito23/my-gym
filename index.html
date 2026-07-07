@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My GYM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Manrope', sans-serif; }
+
+    body {
+      background: #000;
+      color: white;
+      overscroll-behavior: none;
+    }
+
+    .lime { color: #c9f542; }
+
+    .card-day {
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.2s;
+      width: 100%;
+      text-align: left;
+    }
+
+    .card-day:hover {
+      border-color: #c9f542;
+      transform: scale(1.01);
+    }
+
+    .editor {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: none;
+      flex-direction: column;
+    }
+
+    .editor.show {
+      display: flex;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #2a2a2a;
+      background: #111;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .editor-toolbar button {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #c9f542;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .editor-toolbar button:hover {
+      background: #222;
+      border-color: #c9f542;
+    }
+
+    .editor-toolbar button.active {
+      background: #c9f542;
+      color: #000;
+    }
+
+    #editor-content {
+      flex: 1;
+      padding: 16px;
+      outline: none;
+      color: white;
+      overflow-y: auto;
+    }
+
+    #editor-content:empty::before {
+      content: attr(data-placeholder);
+      color: #555;
+    }
+
+    #editor-content img {
+      max-width: 100%;
+      height: auto;
+      margin: 8px 0;
+      border-radius: 8px;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .checklist-item input[type="checkbox"] {
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+      accent-color: #c9f542;
+    }
+
+    .checklist-item input[type="checkbox"]:checked + span {
+      text-decoration: line-through;
+      color: #666;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    #image-input {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="max-w-md mx-auto p-5">
+    <h1 class="text-3xl font-bold lime">My GYM</h1>
+    <p class="text-gray-400 text-sm mt-1">Organiza tu entreno</p>
+    <h2 class="text-xl mt-6 font-semibold border-b border-[#222] pb-2">Esta semana:</h2>
+    <div id="day-list" class="mt-4 space-y-3"></div>
+  </div>
+  
+  <!-- EDITOR -->
+  <div id="editor" class="editor">
+    <div class="flex items-center justify-between p-4 border-b border-[#222]">
+      <button onclick="closeEditor()" class="text-gray-400 hover:text-white font-semibold transition-colors">Volver</button>
+      <h3 id="editor-title" class="lime font-bold text-lg"></h3>
+      <button onclick="save()" class="text-[#c9f542] hover:text-white font-semibold transition-colors">Guardar</button>
+    </div>
+    <div class="editor-toolbar">
+      <button id="bold-btn" onmousedown="event.preventDefault()" onclick="toggleBold()" title="Negrita"> <strong>B</strong> </button> 
+      <button id="italic-btn" onmousedown="event.preventDefault()" onclick="toggleItalic()" title="Itálica"> <em>I</em> </button> 
+      <button onclick="insertImage()" title="Insertar imagen"> 🖼️ </button> 
+      <button onclick="insertCheckbox()" title="Añadir checklist"> ☑️ </button> 
+      <input id="image-input" type="file" accept="image/*">
+    </div>
+    <div id="editor-content" contenteditable="true" data-placeholder="Escribe tu rutina aquí..."></div>
+  </div>
+
+  <script>
+    const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+    let records = [];
+    let currentDay = null;
+
+    function load() {
+      const saved = localStorage.getItem("mygym");
+      records = saved ? JSON.parse(saved) : [];
+      render();
+    }
+
+    function saveData() {
+      localStorage.setItem("mygym", JSON.stringify(records));
+    }
+
+    function render() {
+      const list = document.getElementById("day-list");
+      list.innerHTML = "";
+
+      DAYS.forEach(day => {
+        const rec = records.find(r => r.day === day);
+        const preview = rec ? strip(rec.content).slice(0, 60) : "Sin contenido";
+
+        const card = document.createElement("button");
+        card.className = "card-day";
+        card.innerHTML = `
+          <div>
+            <div class="font-semibold">${day}</div>
+            <div class="text-xs text-gray-400 mt-1">${preview}</div>
+          </div>
+          <span class="lime">✏️</span>
+        `;
+        card.onclick = () => openEditor(day);
+        list.appendChild(card);
+      });
+    }
+
+    function strip(html) {
+      const div = document.createElement("div");
+      div.innerHTML = html || "";
+      return (div.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function openEditor(day) {
+      currentDay = day;
+
+      const rec = records.find(r => r.day === day);
+      document.getElementById("editor-content").innerHTML = rec?.content || "";
+
+      document.getElementById("editor-title").textContent = day;
+      document.getElementById("editor").classList.add("show");
+      
+      // Reset toolbar button states
+      document.getElementById("bold-btn").classList.remove("active");
+      document.getElementById("italic-btn").classList.remove("active");
+    }
+
+    function closeEditor() {
+      document.getElementById("editor").classList.remove("show");
+      currentDay = null;
+    }
+
+    function toggleBold() {
+      document.execCommand('bold', false, null);
+      document.getElementById('bold-btn').classList.toggle('active');
+    }
+
+    function toggleItalic() {
+      document.execCommand('italic', false, null);
+      document.getElementById('italic-btn').classList.toggle('active');
+    }
+
+    function insertImage() {
+      document.getElementById('image-input').click();
+    }
+
+    document.getElementById('image-input').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = document.createElement('img');
+        img.src = event.target.result;
+        img.style.maxWidth = '100%';
+        img.style.borderRadius = '8px';
+        img.style.marginTop = '8px';
+        img.style.marginBottom = '8px';
+        
+        const editor = document.getElementById('editor-content');
+        editor.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+
+    function insertCheckbox() {
+      const editor = document.getElementById('editor-content');
+      
+      const container = document.createElement('div');
+      container.className = 'checklist-item';
+      container.contentEditable = 'false';
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      
+      const label = document.createElement('span');
+      label.textContent = 'Nueva tarea';
+      label.contentEditable = 'true';
+      
+      container.appendChild(checkbox);
+      container.appendChild(label);
+      
+      editor.appendChild(container);
+      editor.appendChild(document.createElement('br'));
+    }
+
+    // ARREGLO CHECKBOX: Persistir estado "checked" para que innerHTML lo guarde correctamente.
+    document.getElementById('editor-content').addEventListener('change', function(e) {
+      if (e.target.type === 'checkbox') {
+        if (e.target.checked) {
+          e.target.setAttribute('checked', 'checked');
+        } else {
+          e.target.removeAttribute('checked');
+        }
+      }
+    });
+
+    function save() {
+      if (!currentDay) return;
+      const content = document.getElementById("editor-content").innerHTML;
+      const existing = records.find(r => r.day === currentDay);
+
+      if (existing) {
+        existing.content = content;
+      } else {
+        records.push({
+          day: currentDay,
+          content
+        });
+      }
+
+      saveData();
+      render();
+      closeEditor();
+    }
+
+    load();
+  </script>
+</body>
+</html>
