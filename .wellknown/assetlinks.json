@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.enzogp.mygym",
+        "sha256_cert_fingerprints": ["62:11:18:34:32:3E:97:8F:F3:8D:0B:33:B6:C3:96:F4:6F:28:00:79:B3:D7:1C:86:9B:D3:0A:C8:D3:AF:F5:C5"]
+      }
+    }]
