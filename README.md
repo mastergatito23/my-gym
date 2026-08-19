@@ -32,5 +32,8 @@ Este es el Roadmap de My GYM.
 - Soporte de Markdown en el editor (extendido)
 - Checklists
 
-### v1.5 | ?
-- ???
+### v1.5 | Navbar+
+- Navbar
+- Seccion RELOJ para descansos y entrenamientos
+- Seccion CONFIGURACION para la app
+- Modo claro
