@@ -298,7 +298,7 @@
         <div id="tab-reloj" class="tab-content">
             <div class="flex items-center justify-between border-b pb-2.5 mb-6" style="border-color: var(--card-border);">
                 <h2 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="timer" class="w-5 h-5 lime"></i> <span id="label-clock">Timer & Rest</span>
+                    <i data-lucide="timer" class="w-5 h-5 lime"></i> <span id="label-clock">Timer</span>
                 </h2>
             </div>
 
@@ -484,9 +484,9 @@
         const translations = {
             en: {
                 greeting: "Welcome, {name}!",
-                guestGreeting: "Welcome, Guest!",
+                guestGreeting: "Welcome, User!",
                 routines: "Routines",
-                clock: "Timer & Rest",
+                clock: "Timer",
                 workoutSession: "Workout Session",
                 start: "Start",
                 pause: "Pause",
@@ -499,7 +499,7 @@
                 set: "Set",
                 stopTimer: "Stop Timer",
                 settings: "Settings",
-                athleteName: "Athlete Name",
+                athleteName: "Username",
                 yourName: "Your name",
                 save: "Save",
                 language: "Language",
@@ -526,9 +526,9 @@
             },
             es: {
                 greeting: "¡Bienvenido/a, {name}!",
-                guestGreeting: "¡Bienvenido/a, Invitado!",
+                guestGreeting: "¡Bienvenido, Usuario!",
                 routines: "Rutinas",
-                clock: "Reloj & Descansos",
+                clock: "Reloj",
                 workoutSession: "Sesión de Entrenamiento",
                 start: "Iniciar",
                 pause: "Pausar",
@@ -541,7 +541,7 @@
                 set: "Fijar",
                 stopTimer: "Finalizar Temporizador",
                 settings: "Configuración",
-                athleteName: "Nombre del Atleta",
+                athleteName: "Nombre de usuario",
                 yourName: "Tu nombre",
                 save: "Guardar",
                 language: "Idioma",
@@ -567,10 +567,10 @@
                 placeholder: "Escribe tu rutina aquí...",
             },
             ca: {
-                greeting: "Benvingut/a, {name}!",
-                guestGreeting: "Benvingut/a, Convidada!",
+                greeting: "Benvingut/da, {name}!",
+                guestGreeting: "Benvingut, Usuari!",
                 routines: "Rutines",
-                clock: "Rellotge & Descans",
+                clock: "Rellotge",
                 workoutSession: "Sessió d'Entrenament",
                 start: "Iniciar",
                 pause: "Pausa",
@@ -583,7 +583,7 @@
                 set: "Establir",
                 stopTimer: "Finalitzar Temporitzador",
                 settings: "Configuració",
-                athleteName: "Nom de l'Atleta",
+                athleteName: "Nom d'usuari",
                 yourName: "El teu nom",
                 save: "Guardar",
                 language: "Idioma",
@@ -619,7 +619,7 @@
         let records = [];
         let currentDay = null;
         let isLightMode = false;
-        let currentLanguage = "en";
+        let currentLanguage = "es";
 
         // Timer Variables
         let restTimerInterval = null;
@@ -686,7 +686,7 @@
         // APP INIT
         function init() {
             // Load language
-            const savedLanguage = localStorage.getItem("mygym_language") || "en";
+            const savedLanguage = localStorage.getItem("mygym_language") || "es";
             currentLanguage = savedLanguage;
             document.getElementById("language-select").value = savedLanguage;
             
