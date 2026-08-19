@@ -37,3 +37,5 @@ Este es el Roadmap de My GYM.
 - Seccion RELOJ para descansos y entrenamientos
 - Seccion CONFIGURACION para la app
 - Modo claro
+- Idiomas (Español, Català)
+- Bugfixes
