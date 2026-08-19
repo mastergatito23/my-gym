@@ -49,8 +49,8 @@
             --card-border: #e4e4e7;
             --text-main: #09090b;
             --text-muted: #71717a;
-            --accent: #84cc16;
-            --accent-text: #ffffff;
+            --accent: #a3e635; /* Verde lima vibrante con alto contraste */
+            --accent-text: #0d1f00;
             --nav-bg: rgba(255, 255, 255, 0.85);
             --toolbar-bg: #ffffff;
             --button-bg: #f4f4f5;
@@ -283,7 +283,7 @@
         <div id="tab-rutinas" class="tab-content active">
             <div class="flex items-center justify-between border-b pb-2.5 mb-4" style="border-color: var(--card-border);">
                 <h2 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="notebook-text" class="w-5 h-5 lime"></i> Rutinas
+                    <i data-lucide="book-open" class="w-5 h-5 lime"></i> Rutinas
                 </h2>
             </div>
 
@@ -322,11 +322,22 @@
                     <span id="rest-label" class="text-xs mt-1 font-medium" style="color: var(--text-muted);">Listo para la serie</span>
                 </div>
 
-                <div class="grid grid-cols-4 gap-2 mb-4">
-                    <button onclick="startRestTimer(30)" class="py-2.5 rounded-xl font-bold text-sm border" style="background: var(--button-bg); border-color: var(--button-border);">30s</button>
-                    <button onclick="startRestTimer(60)" class="py-2.5 rounded-xl font-bold text-sm border" style="background: var(--button-bg); border-color: var(--button-border);">60s</button>
-                    <button onclick="startRestTimer(90)" class="py-2.5 rounded-xl font-bold text-sm border" style="background: var(--button-bg); border-color: var(--button-border);">1m 30s</button>
-                    <button onclick="startRestTimer(120)" class="py-2.5 rounded-xl font-bold text-sm border" style="background: var(--button-bg); border-color: var(--button-border);">2m</button>
+                <!-- Botones de añadir tiempo -->
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <button onclick="addRestTime(30)" class="py-2.5 rounded-xl font-bold text-sm border flex items-center justify-center gap-1" style="background: var(--button-bg); border-color: var(--button-border);">
+                        <i data-lucide="plus" class="w-4 h-4 lime"></i> 30s
+                    </button>
+                    <button onclick="addRestTime(60)" class="py-2.5 rounded-xl font-bold text-sm border flex items-center justify-center gap-1" style="background: var(--button-bg); border-color: var(--button-border);">
+                        <i data-lucide="plus" class="w-4 h-4 lime"></i> 60s
+                    </button>
+                </div>
+
+                <!-- Tiempo Personalizado -->
+                <div class="flex gap-2 mb-4">
+                    <input id="custom-timer-input" type="number" min="1" max="600" placeholder="Segundos" class="flex-1 px-3 py-2.5 rounded-xl border text-sm text-center font-bold outline-none" style="background: var(--bg-color); border-color: var(--card-border); color: var(--text-main);">
+                    <button onclick="startCustomRest()" class="px-4 py-2.5 rounded-xl font-bold text-sm border" style="background: var(--button-bg); border-color: var(--button-border);">
+                        Fijar
+                    </button>
                 </div>
 
                 <button onclick="stopRestTimer()" class="w-full py-2.5 rounded-xl font-bold text-sm border text-red-400 border-red-900/30 bg-red-950/20">
@@ -346,7 +357,7 @@
             <div class="space-y-4">
                 <!-- PERFIL -->
                 <div class="p-4 rounded-2xl border" style="background: var(--card-bg); border-color: var(--card-border);">
-                    <label class="block text-xs font-semibold mb-2" style="color: var(--text-muted);">Nombre de Usuario</label>
+                    <label class="block text-xs font-semibold mb-2" style="color: var(--text-muted);">Nombre del Atleta</label>
                     <div class="flex gap-2">
                         <input id="user-name-input" type="text" placeholder="Tu nombre" class="flex-1 px-3.5 py-2.5 rounded-xl border text-sm font-semibold outline-none" style="background: var(--bg-color); border-color: var(--card-border); color: var(--text-main);">
                         <button onclick="saveUsername()" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-lime-accent">
@@ -402,7 +413,7 @@
     <!-- BOTTOM NAVBAR -->
     <nav class="bottom-nav">
         <button id="nav-rutinas" onclick="switchTab('rutinas')" class="nav-btn active">
-            <i data-lucide="notebook" class="w-5 h-5"></i>
+            <i data-lucide="book-open" class="w-5 h-5"></i>
             <span>Rutinas</span>
         </button>
 
@@ -521,15 +532,15 @@
                 card.className = `card-day ${isToday ? 'today-card' : ''}`;
 
                 card.innerHTML = `
-              <div>
-                <div class="font-bold flex items-center gap-2">
-                  ${day}
-                  ${isToday ? '<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-lime-accent">HOY</span>' : ''}
-                </div>
-                <div class="text-xs mt-1 text-ellipsis overflow-hidden" style="color: var(--text-muted);">${preview || 'Sin rutina anotada'}</div>
-              </div>
-              <i data-lucide="edit-3" class="w-4 h-4 lime"></i>
-            `;
+                  <div>
+                    <div class="font-bold flex items-center gap-2">
+                      ${day}
+                      ${isToday ? '<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-lime-accent">HOY</span>' : ''}
+                    </div>
+                    <div class="text-xs mt-1 text-ellipsis overflow-hidden" style="color: var(--text-muted);">${preview || 'Sin rutina anotada'}</div>
+                  </div>
+                  <i data-lucide="edit-3" class="w-4 h-4 lime"></i>
+                `;
 
                 card.onclick = () => openEditor(day);
                 list.appendChild(card);
@@ -655,6 +666,24 @@
         }
 
         // RELOJ: TEMPORIZADOR DE DESCANSO
+        function addRestTime(seconds) {
+            if (restTimerInterval && restSecondsLeft > 0) {
+                restSecondsLeft += seconds;
+                updateRestDisplay();
+            } else {
+                startRestTimer(seconds);
+            }
+        }
+
+        function startCustomRest() {
+            const input = document.getElementById("custom-timer-input");
+            const secs = parseInt(input.value);
+            if (secs && secs > 0) {
+                startRestTimer(secs);
+                input.value = "";
+            }
+        }
+
         function startRestTimer(seconds) {
             clearInterval(restTimerInterval);
             restSecondsLeft = seconds;
@@ -674,6 +703,7 @@
 
                 if (restSecondsLeft <= 0) {
                     clearInterval(restTimerInterval);
+                    restTimerInterval = null;
                     circle.classList.remove("active");
                     display.textContent = "00:00";
                     label.textContent = "¡Tiempo finalizado!";
@@ -693,6 +723,8 @@
 
         function stopRestTimer() {
             clearInterval(restTimerInterval);
+            restTimerInterval = null;
+            restSecondsLeft = 0;
             document.getElementById("timer-circle").classList.remove("active");
             document.getElementById("rest-display").textContent = "00:00";
             document.getElementById("rest-label").textContent = "Cancelado";
