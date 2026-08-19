@@ -38,4 +38,4 @@ Este es el Roadmap de My GYM.
 - Seccion CONFIGURACION para la app
 - Modo claro
 - Idiomas (Español, Català)
-- Bugfixes
+- Bugfix
