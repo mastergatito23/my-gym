@@ -49,7 +49,7 @@
             --card-border: #e4e4e7;
             --text-main: #09090b;
             --text-muted: #71717a;
-            --accent: #a3e635;
+            --accent: #a3e635; /* Verde lima vibrante con alto contraste */
             --accent-text: #0d1f00;
             --nav-bg: rgba(255, 255, 255, 0.85);
             --toolbar-bg: #ffffff;
@@ -85,7 +85,6 @@
             transition: all 0.2s ease;
             width: 100%;
             text-align: left;
-            cursor: pointer;
         }
 
             .card-day:active, .card-day:hover {
@@ -135,7 +134,6 @@
             background: none;
             border: none;
             padding: 4px;
-            cursor: pointer;
         }
 
             .nav-btn.active {
@@ -208,7 +206,6 @@
             overflow-y: auto;
             font-size: 16px;
             line-height: 1.6;
-            background: var(--bg-color);
         }
 
             #editor-content:empty::before {
@@ -237,7 +234,6 @@
                 height: 20px;
                 accent-color: var(--accent);
                 border-radius: 4px;
-                flex-shrink: 0;
             }
 
                 .checklist-item input[type="checkbox"]:checked + span {
@@ -279,7 +275,7 @@
                 <h1 class="text-3xl font-extrabold lime tracking-tight flex items-center gap-2">
                     My GYM
                 </h1>
-                <p id="user-greeting" class="text-xs mt-1" style="color: var(--text-muted);">Welcome, Guest!</p>
+                <p id="user-greeting" class="text-xs mt-1" style="color: var(--text-muted);">Bienvenido/a, Invitado.</p>
             </div>
         </div>
 
@@ -287,7 +283,7 @@
         <div id="tab-rutinas" class="tab-content active">
             <div class="flex items-center justify-between border-b pb-2.5 mb-4" style="border-color: var(--card-border);">
                 <h2 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="book-open" class="w-5 h-5 lime"></i> <span id="label-routines">Routines</span>
+                    <i data-lucide="book-open" class="w-5 h-5 lime"></i> Rutinas
                 </h2>
             </div>
 
@@ -298,17 +294,32 @@
         <div id="tab-reloj" class="tab-content">
             <div class="flex items-center justify-between border-b pb-2.5 mb-6" style="border-color: var(--card-border);">
                 <h2 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="timer" class="w-5 h-5 lime"></i> <span id="label-clock">Timer & Rest</span>
+                    <i data-lucide="timer" class="w-5 h-5 lime"></i> Reloj & Descansos
                 </h2>
+            </div>
+
+            <!-- CRONÓMETRO DE ENTRENAMIENTO -->
+            <div class="p-5 rounded-2xl mb-6 text-center border" style="background: var(--card-bg); border-color: var(--card-border);">
+                <p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--text-muted);">Sesión de Entrenamiento</p>
+                <div id="stopwatch-display" class="text-4xl font-extrabold tracking-mono my-2">00:00:00</div>
+
+                <div class="flex justify-center gap-3 mt-4">
+                    <button id="sw-toggle-btn" onclick="toggleStopwatch()" class="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 bg-lime-accent">
+                        <i data-lucide="play" class="w-4 h-4" id="sw-icon"></i> <span id="sw-status-text">Iniciar</span>
+                    </button>
+                    <button onclick="resetStopwatch()" class="px-4 py-2.5 rounded-xl font-bold border flex items-center gap-2" style="background: var(--button-bg); border-color: var(--button-border); color: var(--text-main);">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- TEMPORIZADOR DE DESCANSO -->
             <div class="p-5 rounded-2xl text-center border" style="background: var(--card-bg); border-color: var(--card-border);">
-                <p class="text-xs font-semibold uppercase tracking-wider mb-4" style="color: var(--text-muted);" id="label-rest-timer">Rest Timer</p>
+                <p class="text-xs font-semibold uppercase tracking-wider mb-4" style="color: var(--text-muted);">Temporizador de Descanso</p>
 
                 <div id="timer-circle" class="timer-circle mb-6">
                     <span id="rest-display" class="text-4xl font-extrabold">00:00</span>
-                    <span id="rest-label" class="text-xs mt-1 font-medium" style="color: var(--text-muted);">Ready for next set</span>
+                    <span id="rest-label" class="text-xs mt-1 font-medium" style="color: var(--text-muted);">Listo para la serie</span>
                 </div>
 
                 <!-- Botones de añadir tiempo -->
@@ -323,14 +334,14 @@
 
                 <!-- Tiempo Personalizado -->
                 <div class="flex gap-2 mb-4">
-                    <input id="custom-timer-input" type="number" min="1" max="600" placeholder="Seconds" class="flex-1 px-3 py-2.5 rounded-xl border text-sm text-center font-bold outline-none" style="background: var(--bg-color); color: var(--text-main); border-color: var(--card-border);">
+                    <input id="custom-timer-input" type="number" min="1" max="600" placeholder="Segundos" class="flex-1 px-3 py-2.5 rounded-xl border text-sm text-center font-bold outline-none" style="background: var(--bg-color); border-color: var(--card-border); color: var(--text-main);">
                     <button onclick="startCustomRest()" class="px-4 py-2.5 rounded-xl font-bold text-sm border" style="background: var(--button-bg); border-color: var(--button-border);">
-                        <span id="label-set">Set</span>
+                        Fijar
                     </button>
                 </div>
 
-                <button onclick="stopRestTimer()" class="w-full py-2.5 rounded-xl font-bold text-sm border text-red-400 border-red-900/30 bg-red-950/20" id="label-stop-timer">
-                    Stop Timer
+                <button onclick="stopRestTimer()" class="w-full py-2.5 rounded-xl font-bold text-sm border text-red-400 border-red-900/30 bg-red-950/20">
+                    Finalizar Temporizador
                 </button>
             </div>
         </div>
@@ -339,55 +350,46 @@
         <div id="tab-configuracion" class="tab-content">
             <div class="flex items-center justify-between border-b pb-2.5 mb-6" style="border-color: var(--card-border);">
                 <h2 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="settings" class="w-5 h-5 lime"></i> <span id="label-settings">Settings</span>
+                    <i data-lucide="settings" class="w-5 h-5 lime"></i> Configuración
                 </h2>
             </div>
 
             <div class="space-y-4">
                 <!-- PERFIL -->
                 <div class="p-4 rounded-2xl border" style="background: var(--card-bg); border-color: var(--card-border);">
-                    <label class="block text-xs font-semibold mb-2" style="color: var(--text-muted);" id="label-athlete-name">Athlete Name</label>
+                    <label class="block text-xs font-semibold mb-2" style="color: var(--text-muted);">Nombre del Atleta</label>
                     <div class="flex gap-2">
-                        <input id="user-name-input" type="text" placeholder="Your name" class="flex-1 px-3.5 py-2.5 rounded-xl border text-sm font-semibold outline-none" style="background: var(--bg-color); color: var(--text-main); border-color: var(--card-border);">
-                        <button onclick="saveUsername()" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-lime-accent" id="label-save">
-                            Save
+                        <input id="user-name-input" type="text" placeholder="Tu nombre" class="flex-1 px-3.5 py-2.5 rounded-xl border text-sm font-semibold outline-none" style="background: var(--bg-color); border-color: var(--card-border); color: var(--text-main);">
+                        <button onclick="saveUsername()" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-lime-accent">
+                            Guardar
                         </button>
                     </div>
-                </div>
-
-                <!-- IDIOMA -->
-                <div class="p-4 rounded-2xl border" style="background: var(--card-bg); border-color: var(--card-border);">
-                    <label class="block text-xs font-semibold mb-2" style="color: var(--text-muted);" id="label-language">Language</label>
-                    <select id="language-select" onchange="changeLanguage(this.value)" class="w-full px-3.5 py-2.5 rounded-xl border text-sm font-semibold" style="background: var(--bg-color); color: var(--text-main); border-color: var(--card-border);">
-                        <option value="es">Español</option>
-                        <option value="ca">Català</option>
-                    </select>
                 </div>
 
                 <!-- APARIENCIA -->
                 <div class="p-4 rounded-2xl border flex items-center justify-between" style="background: var(--card-bg); border-color: var(--card-border);">
                     <div>
-                        <div class="font-bold text-sm" id="label-dark-mode">Dark Mode</div>
-                        <div class="text-xs" style="color: var(--text-muted);" id="label-change-theme">Toggle the app theme</div>
+                        <div class="font-bold text-sm">Modo Claro</div>
+                        <div class="text-xs" style="color: var(--text-muted);">Cambiar el tema de la aplicación</div>
                     </div>
-                    <button id="theme-toggle-btn" onclick="toggleTheme()" class="px-4 py-2 rounded-xl text-xs font-bold border flex items-center gap-2" style="background: var(--button-bg); border-color: var(--button-border);">
-                        <i data-lucide="sun" class="w-4 h-4"></i> <span id="theme-btn-text">Off</span>
+                    <button id="theme-toggle-btn" onclick="toggleTheme()" class="px-4 py-2 rounded-xl text-xs font-bold border flex items-center gap-2" style="background: var(--button-bg); border-color: var(--button-border); color: var(--text-main);">
+                        <i data-lucide="sun" class="w-4 h-4"></i> <span id="theme-btn-text">Desactivado</span>
                     </button>
                 </div>
 
                 <!-- COPIA DE SEGURIDAD -->
                 <div class="p-4 rounded-2xl border space-y-3" style="background: var(--card-bg); border-color: var(--card-border);">
                     <div>
-                        <div class="font-bold text-sm" id="label-backup-title">Backup & Restore</div>
-                        <div class="text-xs" style="color: var(--text-muted);" id="label-backup-desc">Save or restore your workouts</div>
+                        <div class="font-bold text-sm">Datos y Copia de Seguridad</div>
+                        <div class="text-xs" style="color: var(--text-muted);">Exporta o importa tus rutinas guardadas</div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 pt-1">
                         <button onclick="exportBackup()" class="py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2" style="background: var(--button-bg); border-color: var(--button-border);">
-                            <i data-lucide="download" class="w-4 h-4 lime"></i> <span id="label-export">Export</span>
+                            <i data-lucide="download" class="w-4 h-4 lime"></i> Exportar
                         </button>
                         <button onclick="document.getElementById('import-file-input').click()" class="py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2" style="background: var(--button-bg); border-color: var(--button-border);">
-                            <i data-lucide="upload" class="w-4 h-4 lime"></i> <span id="label-import">Import</span>
+                            <i data-lucide="upload" class="w-4 h-4 lime"></i> Importar
                         </button>
                         <input id="import-file-input" type="file" accept=".json" class="hidden" onchange="importBackup(event)">
                     </div>
@@ -396,11 +398,11 @@
                 <!-- RESET DATA -->
                 <div class="p-4 rounded-2xl border border-red-900/30 bg-red-950/10 flex items-center justify-between">
                     <div>
-                        <div class="font-bold text-sm text-red-400" id="label-delete-routines">Delete All Workouts</div>
-                        <div class="text-xs text-red-200/60" id="label-delete-desc">Remove all saved data</div>
+                        <div class="font-bold text-sm text-red-400">Borrar Rutinas</div>
+                        <div class="text-xs text-red-200/60">Eliminar todo el contenido guardado</div>
                     </div>
-                    <button onclick="clearAllData()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-red-600 text-white" id="label-delete">
-                        Delete
+                    <button onclick="clearAllData()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-red-600 text-white">
+                        Borrar
                     </button>
                 </div>
             </div>
@@ -412,17 +414,17 @@
     <nav class="bottom-nav">
         <button id="nav-rutinas" onclick="switchTab('rutinas')" class="nav-btn active">
             <i data-lucide="book-open" class="w-5 h-5"></i>
-            <span id="nav-label-routines">Routines</span>
+            <span>Rutinas</span>
         </button>
 
         <button id="nav-reloj" onclick="switchTab('reloj')" class="nav-btn">
             <i data-lucide="timer" class="w-5 h-5"></i>
-            <span id="nav-label-clock">Timer</span>
+            <span>Reloj</span>
         </button>
 
         <button id="nav-configuracion" onclick="switchTab('configuracion')" class="nav-btn">
             <i data-lucide="settings" class="w-5 h-5"></i>
-            <span id="nav-label-settings">Settings</span>
+            <span>Ajustes</span>
         </button>
     </nav>
 
@@ -430,137 +432,53 @@
     <div id="editor" class="editor">
         <div class="editor-header">
             <button onclick="closeEditor()" class="p-2 rounded-lg text-sm font-bold flex items-center gap-1" style="color: var(--text-muted);">
-                <i data-lucide="chevron-left" class="w-5 h-5"></i> <span id="label-back">Back</span>
+                <i data-lucide="chevron-left" class="w-5 h-5"></i> Volver
             </button>
 
             <h3 id="editor-title" class="lime font-extrabold text-lg"></h3>
 
-            <button onclick="save()" class="px-4 py-1.5 rounded-xl text-sm font-bold bg-lime-accent" id="label-editor-save">
-                Save
+            <button onclick="save()" class="px-4 py-1.5 rounded-xl text-sm font-bold bg-lime-accent">
+                Guardar
             </button>
         </div>
 
         <div class="editor-toolbar">
-            <button id="bold-btn" onmousedown="event.preventDefault()" onclick="toggleBold()" title="Bold">
+            <button id="bold-btn" onmousedown="event.preventDefault()" onclick="toggleBold()" title="Negrita">
                 <strong>B</strong>
             </button>
 
-            <button id="italic-btn" onmousedown="event.preventDefault()" onclick="toggleItalic()" title="Italic">
+            <button id="italic-btn" onmousedown="event.preventDefault()" onclick="toggleItalic()" title="Itálica">
                 <em>I</em>
             </button>
 
-            <button onclick="insertImage()" title="Insert image">
+            <button onclick="insertImage()" title="Insertar imagen">
                 <i data-lucide="image" class="w-4 h-4"></i>
             </button>
 
-            <button onclick="insertCheckbox()" title="Add checklist">
+            <button onclick="insertCheckbox()" title="Añadir checklist">
                 <i data-lucide="check-square" class="w-4 h-4"></i>
             </button>
 
             <input id="image-input" type="file" accept="image/*">
         </div>
 
-        <div id="editor-content" contenteditable="true" data-placeholder="Write your workout here..."></div>
+        <div id="editor-content" contenteditable="true" data-placeholder="Escribe tu rutina aquí..."></div>
     </div>
 
     <script>
-        // LANGUAGE SYSTEM
-        const translations = {
-            es: {
-                greeting: "¡Bienvenido/a, {name}!",
-                guestGreeting: "¡Bienvenido, Usuario!",
-                routines: "Rutinas",
-                clock: "Reloj & Descansos",
-                workoutSession: "Sesión de Entrenamiento",
-                start: "Iniciar",
-                pause: "Pausar",
-                resume: "Reanudar",
-                restTimer: "Temporizador de Descanso",
-                readyForNextSet: "Listo para la serie",
-                resting: "Descansando...",
-                timeFinished: "¡Tiempo finalizado!",
-                cancelled: "Cancelado",
-                set: "Fijar",
-                stopTimer: "Finalizar Temporizador",
-                settings: "Configuración",
-                athleteName: "Nombre del Atleta",
-                yourName: "Tu nombre",
-                save: "Guardar",
-                language: "Idioma",
-                darkMode: "Modo Oscuro",
-                changeTheme: "Cambiar el tema de la aplicación",
-                off: "Desactivado",
-                on: "Activado",
-                backupTitle: "Datos y Copia de Seguridad",
-                backupDesc: "Exporta o importa tus rutinas guardadas",
-                export: "Exportar",
-                import: "Importar",
-                deleteRoutines: "Borrar Rutinas",
-                deleteDesc: "Eliminar todo el contenido guardado",
-                delete: "Borrar",
-                back: "Volver",
-                noRoutine: "Sin rutina anotada",
-                noContent: "Sin contenido",
-                newExercise: "Nueva serie / ejercicio",
-                restoreSuccess: "¡Rutinas restauradas con éxito!",
-                invalidFile: "Archivo no válido.",
-                confirmDelete: "¿Seguro que quieres borrar todas tus rutinas?",
-                seconds: "Segundos",
-                placeholder: "Escribe tu rutina aquí...",
-            },
-            ca: {
-                greeting: "Benvingut/da, {name}!",
-                guestGreeting: "Benvingut, Usuari!",
-                routines: "Rutines",
-                clock: "Rellotge & Descans",
-                workoutSession: "Sessió d'Entrenament",
-                start: "Iniciar",
-                pause: "Pausa",
-                resume: "Reprendre",
-                restTimer: "Temporitzador de Descans",
-                readyForNextSet: "Llest per a la sèrie següent",
-                resting: "Descansant...",
-                timeFinished: "¡Temps finalitzat!",
-                cancelled: "Cancel·lat",
-                set: "Establir",
-                stopTimer: "Finalitzar Temporitzador",
-                settings: "Configuració",
-                athleteName: "Nom de l'Atleta",
-                yourName: "El teu nom",
-                save: "Guardar",
-                language: "Idioma",
-                darkMode: "Mode Fosc",
-                changeTheme: "Canviar el tema de l'aplicació",
-                off: "Desactivat",
-                on: "Activat",
-                backupTitle: "Dades i Còpia de Seguretat",
-                backupDesc: "Exporta o importa les teves rutines guardades",
-                export: "Exportar",
-                import: "Importar",
-                deleteRoutines: "Esborrar Rutines",
-                deleteDesc: "Eliminar tot el contingut guardat",
-                delete: "Esborrar",
-                back: "Enrere",
-                noRoutine: "Sense rutina anotada",
-                noContent: "Sense contingut",
-                newExercise: "Noves sèrie / exercici",
-                restoreSuccess: "¡Rutines restaurades correctament!",
-                invalidFile: "Arxiu no vàlid.",
-                confirmDelete: "Estàs segur que vols esborrar totes les teves rutines?",
-                seconds: "Segons",
-                placeholder: "Escriu la teva rutina aquí...",
-            }
-        };
-
-        const DAYS = {
-            es: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
-            ca: ["Dilluns", "Dimarts", "Dimecres", "Dijous", "Divendres", "Dissabte", "Diumenge"]
-        };
+        const DAYS = [
+            "Lunes",
+            "Martes",
+            "Miércoles",
+            "Jueves",
+            "Viernes",
+            "Sábado",
+            "Domingo"
+        ];
 
         let records = [];
         let currentDay = null;
         let isLightMode = false;
-        let currentLanguage = "en";
 
         // Timer Variables
         let restTimerInterval = null;
@@ -571,69 +489,11 @@
         let swSeconds = 0;
         let swRunning = false;
 
-        // TRANSLATION FUNCTION
-        function t(key) {
-            return translations[currentLanguage]?.[key] || translations.en[key] || key;
-        }
-
-        function updateAllText() {
-            document.getElementById("label-routines").textContent = t("routines");
-            document.getElementById("label-clock").textContent = t("clock");
-            document.getElementById("label-workout-session").textContent = t("workoutSession");
-            document.getElementById("sw-status-text").textContent = swRunning ? t("pause") : (swSeconds > 0 ? t("resume") : t("start"));
-            document.getElementById("label-rest-timer").textContent = t("restTimer");
-            document.getElementById("label-set").textContent = t("set");
-            document.getElementById("label-stop-timer").textContent = t("stopTimer");
-            document.getElementById("label-settings").textContent = t("settings");
-            document.getElementById("label-athlete-name").textContent = t("athleteName");
-            document.getElementById("label-save").textContent = t("save");
-            document.getElementById("label-language").textContent = t("language");
-            document.getElementById("label-dark-mode").textContent = t("darkMode");
-            document.getElementById("label-change-theme").textContent = t("changeTheme");
-            document.getElementById("label-backup-title").textContent = t("backupTitle");
-            document.getElementById("label-backup-desc").textContent = t("backupDesc");
-            document.getElementById("label-export").textContent = t("export");
-            document.getElementById("label-import").textContent = t("import");
-            document.getElementById("label-delete-routines").textContent = t("deleteRoutines");
-            document.getElementById("label-delete-desc").textContent = t("deleteDesc");
-            document.getElementById("label-delete").textContent = t("delete");
-            document.getElementById("label-back").textContent = t("back");
-            document.getElementById("label-editor-save").textContent = t("save");
-            document.getElementById("nav-label-routines").textContent = t("routines");
-            document.getElementById("nav-label-clock").textContent = t("clock");
-            document.getElementById("nav-label-settings").textContent = t("settings");
-            document.getElementById("user-name-input").placeholder = t("yourName");
-            document.getElementById("custom-timer-input").placeholder = t("seconds");
-            document.getElementById("editor-content").setAttribute("data-placeholder", t("placeholder"));
-            
-            // Update greeting
-            const savedName = localStorage.getItem("mygym_username");
-            if (savedName) {
-                document.getElementById("user-greeting").textContent = t("greeting").replace("{name}", savedName);
-            } else {
-                document.getElementById("user-greeting").textContent = t("guestGreeting");
-            }
-
-            render();
-        }
-
-        function changeLanguage(lang) {
-            currentLanguage = lang;
-            localStorage.setItem("mygym_language", lang);
-            document.documentElement.lang = lang;
-            updateAllText();
-        }
-
         // APP INIT
         function init() {
-            // Load language
-            const savedLanguage = localStorage.getItem("mygym_language") || "es";
-            currentLanguage = savedLanguage;
-            document.getElementById("language-select").value = savedLanguage;
-            
             loadSettings();
             loadRecords();
-            updateAllText();
+            render();
             lucide.createIcons();
         }
 
@@ -663,14 +523,10 @@
             const todayName = new Intl.DateTimeFormat('es-ES', { weekday: 'long' }).format(new Date());
             const formattedToday = todayName.charAt(0).toUpperCase() + todayName.slice(1);
 
-            const daysList = DAYS[currentLanguage] || DAYS.en;
-            const todayIndex = new Date().getDay();
-            const todayDayName = daysList[(todayIndex + 6) % 7];
-
-            daysList.forEach(day => {
+            DAYS.forEach(day => {
                 const rec = records.find(r => r.day === day);
-                const preview = rec ? strip(rec.content).slice(0, 50) : t("noContent");
-                const isToday = day === todayDayName;
+                const preview = rec ? strip(rec.content).slice(0, 50) : "Sin contenido";
+                const isToday = day === formattedToday;
 
                 const card = document.createElement("button");
                 card.className = `card-day ${isToday ? 'today-card' : ''}`;
@@ -679,9 +535,9 @@
                   <div>
                     <div class="font-bold flex items-center gap-2">
                       ${day}
-                      ${isToday ? `<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-lime-accent">TODAY</span>` : ''}
+                      ${isToday ? '<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-lime-accent">HOY</span>' : ''}
                     </div>
-                    <div class="text-xs mt-1 text-ellipsis overflow-hidden" style="color: var(--text-muted);">${preview || t("noRoutine")}</div>
+                    <div class="text-xs mt-1 text-ellipsis overflow-hidden" style="color: var(--text-muted);">${preview || 'Sin rutina anotada'}</div>
                   </div>
                   <i data-lucide="edit-3" class="w-4 h-4 lime"></i>
                 `;
@@ -749,7 +605,7 @@
             checkbox.type = "checkbox";
 
             const label = document.createElement("span");
-            label.textContent = t("newExercise");
+            label.textContent = "Nueva serie / ejercicio";
             label.contentEditable = "true";
 
             container.appendChild(checkbox);
@@ -781,11 +637,11 @@
             if (swRunning) {
                 clearInterval(swInterval);
                 swRunning = false;
-                statusText.textContent = t("resume");
+                statusText.textContent = "Reanudar";
                 icon.setAttribute("data-lucide", "play");
             } else {
                 swRunning = true;
-                statusText.textContent = t("pause");
+                statusText.textContent = "Pausar";
                 icon.setAttribute("data-lucide", "pause");
 
                 swInterval = setInterval(() => {
@@ -804,7 +660,7 @@
             swRunning = false;
             swSeconds = 0;
             document.getElementById("stopwatch-display").textContent = "00:00:00";
-            document.getElementById("sw-status-text").textContent = t("start");
+            document.getElementById("sw-status-text").textContent = "Iniciar";
             document.getElementById("sw-icon").setAttribute("data-lucide", "play");
             lucide.createIcons();
         }
@@ -837,7 +693,7 @@
             const label = document.getElementById("rest-label");
 
             circle.classList.add("active");
-            label.textContent = t("resting");
+            label.textContent = "Descansando...";
 
             updateRestDisplay();
 
@@ -850,7 +706,7 @@
                     restTimerInterval = null;
                     circle.classList.remove("active");
                     display.textContent = "00:00";
-                    label.textContent = t("timeFinished");
+                    label.textContent = "¡Tiempo finalizado!";
 
                     if ("vibrate" in navigator) {
                         navigator.vibrate([300, 150, 300]);
@@ -871,7 +727,7 @@
             restSecondsLeft = 0;
             document.getElementById("timer-circle").classList.remove("active");
             document.getElementById("rest-display").textContent = "00:00";
-            document.getElementById("rest-label").textContent = t("cancelled");
+            document.getElementById("rest-label").textContent = "Cancelado";
         }
 
         // CONFIGURACIÓN: THEME & SETTINGS
@@ -880,16 +736,14 @@
             if (savedTheme === "light") {
                 isLightMode = true;
                 document.body.classList.add("light-mode");
-                document.getElementById("theme-btn-text").textContent = t("on");
+                document.getElementById("theme-btn-text").textContent = "Activado";
                 document.getElementById("theme-color-meta").setAttribute("content", "#f4f4f5");
-            } else {
-                document.getElementById("theme-btn-text").textContent = t("off");
             }
 
             const savedName = localStorage.getItem("mygym_username");
             if (savedName) {
                 document.getElementById("user-name-input").value = savedName;
-                document.getElementById("user-greeting").textContent = t("greeting").replace("{name}", savedName);
+                document.getElementById("user-greeting").textContent = `Bienvenido/a, ${savedName}.`;
             }
         }
 
@@ -898,12 +752,12 @@
             if (isLightMode) {
                 document.body.classList.add("light-mode");
                 localStorage.setItem("mygym_theme", "light");
-                document.getElementById("theme-btn-text").textContent = t("on");
+                document.getElementById("theme-btn-text").textContent = "Activado";
                 document.getElementById("theme-color-meta").setAttribute("content", "#f4f4f5");
             } else {
                 document.body.classList.remove("light-mode");
                 localStorage.setItem("mygym_theme", "dark");
-                document.getElementById("theme-btn-text").textContent = t("off");
+                document.getElementById("theme-btn-text").textContent = "Desactivado";
                 document.getElementById("theme-color-meta").setAttribute("content", "#000000");
             }
         }
@@ -912,7 +766,7 @@
             const name = document.getElementById("user-name-input").value.trim();
             if (name) {
                 localStorage.setItem("mygym_username", name);
-                document.getElementById("user-greeting").textContent = t("greeting").replace("{name}", name);
+                document.getElementById("user-greeting").textContent = `Bienvenido/a, ${name}.`;
             }
         }
 
@@ -936,17 +790,16 @@
                     records = JSON.parse(evt.target.result);
                     saveData();
                     render();
-                    alert(t("restoreSuccess"));
+                    alert("¡Rutinas restauradas con éxito!");
                 } catch (err) {
-                    alert(t("invalidFile"));
+                    alert("Archivo no válido.");
                 }
             };
             reader.readAsText(file);
-            e.target.value = "";
         }
 
         function clearAllData() {
-            if (confirm(t("confirmDelete"))) {
+            if (confirm("¿Seguro que quieres borrar todas tus rutinas?")) {
                 records = [];
                 saveData();
                 render();
