@@ -1,424 +1,787 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>My GYM</title>
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#000000">
-  <link rel="apple-touch-icon" href="logo.png">
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <!-- Vercel Web Analytics -->
-  <script>
-    window.va = window.va || function () {
-      (window.vaq = window.vaq || []).push(arguments);
-    };
-  </script>
-  <script defer src="/_vercel/insights/script.js"></script>
-
-  <style>
-    * {
-      font-family: 'Manrope', sans-serif;
-    }
-
-    body {
-      background: #000;
-      color: white;
-      overscroll-behavior: none;
-    }
-
-    .lime {
-      color: #c9f542;
-    }
-
-    .card-day {
-      background: #111;
-      border: 1px solid #2a2a2a;
-      border-radius: 16px;
-      padding: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: .2s;
-      width: 100%;
-      text-align: left;
-    }
-
-    .card-day:hover {
-      border-color: #c9f542;
-      transform: scale(1.01);
-    }
-
-    .editor {
-      position: fixed;
-      inset: 0;
-      background: #000;
-      display: none;
-      flex-direction: column;
-    }
-
-    .editor.show {
-      display: flex;
-    }
-
-    .editor-toolbar {
-      display: flex;
-      gap: 8px;
-      padding: 12px 16px;
-      border-bottom: 1px solid #2a2a2a;
-      background: #111;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .editor-toolbar button {
-      background: #1a1a1a;
-      border: 1px solid #333;
-      color: #c9f542;
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      cursor: pointer;
-      transition: .2s;
-    }
-
-    .editor-toolbar button:hover {
-      background: #222;
-      border-color: #c9f542;
-    }
-
-    .editor-toolbar button.active {
-      background: #c9f542;
-      color: #000;
-    }
-
-    #editor-content {
-      flex: 1;
-      padding: 16px;
-      outline: none;
-      color: white;
-      overflow-y: auto;
-    }
-
-    #editor-content:empty::before {
-      content: attr(data-placeholder);
-      color: #555;
-    }
-
-    #editor-content img {
-      max-width: 100%;
-      height: auto;
-      margin: 8px 0;
-      border-radius: 8px;
-    }
-
-    .checklist-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 6px 0;
-    }
-
-    .checklist-item input[type="checkbox"] {
-      cursor: pointer;
-      width: 18px;
-      height: 18px;
-      accent-color: #c9f542;
-    }
-
-    .checklist-item input[type="checkbox"]:checked + span {
-      text-decoration: line-through;
-      color: #666;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    #image-input {
-      display: none;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="max-w-md mx-auto p-5">
-    <h1 class="text-3xl font-bold lime">My GYM</h1>
-    <p class="text-gray-400 text-sm mt-1">Bienvenido/a, invitado.</p>
-
-    <h2 class="text-xl mt-6 font-semibold border-b border-[#222] pb-2">
-      Inicio
-    </h2>
-
-    <div id="day-list" class="mt-4 space-y-3"></div>
-  </div>
-
-  <!-- EDITOR -->
-  <div id="editor" class="editor">
-    <div class="flex items-center justify-between p-4 border-b border-[#222]">
-      <button
-        onclick="closeEditor()"
-        class="text-gray-400 hover:text-white font-semibold transition-colors">
-        Volver
-      </button>
-
-      <h3 id="editor-title" class="lime font-bold text-lg"></h3>
-
-      <button
-        onclick="save()"
-        class="text-[#c9f542] hover:text-white font-semibold transition-colors">
-        Guardar
-      </button>
-    </div>
-
-    <div class="editor-toolbar">
-      <button
-        id="bold-btn"
-        onmousedown="event.preventDefault()"
-        onclick="toggleBold()"
-        title="Negrita">
-        <strong>B</strong>
-      </button>
-
-      <button
-        id="italic-btn"
-        onmousedown="event.preventDefault()"
-        onclick="toggleItalic()"
-        title="Itálica">
-        <em>I</em>
-      </button>
-
-      <button onclick="insertImage()" title="Insertar imagen">
-        🖼️
-      </button>
-
-      <button onclick="insertCheckbox()" title="Añadir checklist">
-        ☑️
-      </button>
-
-      <input id="image-input" type="file" accept="image/*">
-    </div>
-
-    <div
-      id="editor-content"
-      contenteditable="true"
-      data-placeholder="Escribe tu rutina aquí...">
-    </div>
-  </div>
-
-  <script>
-    const DAYS = [
-      "Lunes",
-      "Martes",
-      "Miércoles",
-      "Jueves",
-      "Viernes",
-      "Sábado",
-      "Domingo"
-    ];
-
-    let records = [];
-    let currentDay = null;
-
-    function load() {
-      const saved = localStorage.getItem("mygym");
-      records = saved ? JSON.parse(saved) : [];
-      render();
-    }
-
-    function saveData() {
-      localStorage.setItem("mygym", JSON.stringify(records));
-    }
-
-    function render() {
-      const list = document.getElementById("day-list");
-      list.innerHTML = "";
-
-      DAYS.forEach(day => {
-        const rec = records.find(r => r.day === day);
-
-        const preview = rec
-          ? strip(rec.content).slice(0, 60)
-          : "Sin contenido";
-
-        const card = document.createElement("button");
-
-        card.className = "card-day";
-
-        card.innerHTML = `
-          <div>
-            <div class="font-semibold">${day}</div>
-            <div class="text-xs text-gray-400 mt-1">${preview}</div>
-          </div>
-          <span class="lime">✏️</span>
-        `;
-
-        card.onclick = () => openEditor(day);
-
-        list.appendChild(card);
-      });
-    }
-
-    function strip(html) {
-      const div = document.createElement("div");
-      div.innerHTML = html || "";
-
-      return (div.textContent || "")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    function openEditor(day) {
-      currentDay = day;
-
-      const rec = records.find(r => r.day === day);
-
-      document.getElementById("editor-content").innerHTML =
-        rec?.content || "";
-
-      document.getElementById("editor-title").textContent = day;
-
-      document
-        .getElementById("editor")
-        .classList.add("show");
-
-      document
-        .getElementById("bold-btn")
-        .classList.remove("active");
-
-      document
-        .getElementById("italic-btn")
-        .classList.remove("active");
-    }
-
-    function closeEditor() {
-      document
-        .getElementById("editor")
-        .classList.remove("show");
-
-      currentDay = null;
-    }
-
-    function toggleBold() {
-      document.execCommand("bold");
-      document
-        .getElementById("bold-btn")
-        .classList.toggle("active");
-    }
-
-    function toggleItalic() {
-      document.execCommand("italic");
-      document
-        .getElementById("italic-btn")
-        .classList.toggle("active");
-    }
-
-    function insertImage() {
-      document.getElementById("image-input").click();
-    }
-
-    document
-      .getElementById("image-input")
-      .addEventListener("change", function (e) {
-        const file = e.target.files[0];
-
-        if (!file) return;
-
-        const reader = new FileReader();
-
-        reader.onload = function (event) {
-          const img = document.createElement("img");
-
-          img.src = event.target.result;
-          img.style.maxWidth = "100%";
-          img.style.borderRadius = "8px";
-          img.style.marginTop = "8px";
-          img.style.marginBottom = "8px";
-
-          document
-            .getElementById("editor-content")
-            .appendChild(img);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>My GYM v1.5</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000" id="theme-color-meta">
+    <link rel="apple-touch-icon" href="logo.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Vercel Web Analytics -->
+    <script>
+        window.va = window.va || function () {
+            (window.vaq = window.vaq || []).push(arguments);
         };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
 
-        reader.readAsDataURL(file);
-
-        e.target.value = "";
-      });
-    function insertCheckbox() {
-      const editor = document.getElementById("editor-content");
-
-      const container = document.createElement("div");
-      container.className = "checklist-item";
-      container.contentEditable = "false";
-
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-
-      const label = document.createElement("span");
-      label.textContent = "Nueva tarea";
-      label.contentEditable = "true";
-
-      container.appendChild(checkbox);
-      container.appendChild(label);
-
-      editor.appendChild(container);
-      editor.appendChild(document.createElement("br"));
-    }
-
-    document.getElementById("editor-content").addEventListener("change", function (e) {
-      if (e.target.type === "checkbox") {
-        if (e.target.checked) {
-          e.target.setAttribute("checked", "checked");
-        } else {
-          e.target.removeAttribute("checked");
+    <style>
+        * {
+            font-family: 'Manrope', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
-      }
-    });
 
-    function save() {
-      if (!currentDay) return;
+        :root {
+            --bg-color: #000000;
+            --card-bg: #111111;
+            --card-border: #2a2a2a;
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+            --accent: #c9f542;
+            --accent-text: #000000;
+            --nav-bg: rgba(17, 17, 17, 0.85);
+            --toolbar-bg: #111111;
+            --button-bg: #1a1a1a;
+            --button-border: #333333;
+        }
 
-      const content = document.getElementById("editor-content").innerHTML;
+        body.light-mode {
+            --bg-color: #f4f4f5;
+            --card-bg: #ffffff;
+            --card-border: #e4e4e7;
+            --text-main: #09090b;
+            --text-muted: #71717a;
+            --accent: #84cc16;
+            --accent-text: #ffffff;
+            --nav-bg: rgba(255, 255, 255, 0.85);
+            --toolbar-bg: #ffffff;
+            --button-bg: #f4f4f5;
+            --button-border: #d4d4d8;
+        }
 
-      const existing = records.find(r => r.day === currentDay);
+        body {
+            background: var(--bg-color);
+            color: var(--text-main);
+            overscroll-behavior: none;
+            transition: background-color 0.25s ease, color 0.25s ease;
+            padding-bottom: 80px;
+        }
 
-      if (existing) {
-        existing.content = content;
-      } else {
-        records.push({
-          day: currentDay,
-          content
+        .lime {
+            color: var(--accent);
+        }
+
+        .bg-lime-accent {
+            background-color: var(--accent);
+            color: var(--accent-text);
+        }
+
+        .card-day {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: left;
+        }
+
+            .card-day:active, .card-day:hover {
+                border-color: var(--accent);
+                transform: scale(1.01);
+            }
+
+            .card-day.today-card {
+                border-color: var(--accent);
+                box-shadow: 0 0 15px rgba(201, 245, 66, 0.15);
+            }
+
+        /* Tab Views */
+        .tab-content {
+            display: none;
+        }
+
+            .tab-content.active {
+                display: block;
+            }
+
+        /* Bottom Navbar */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--nav-bg);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 16px 14px;
+            z-index: 40;
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            transition: color 0.2s;
+            background: none;
+            border: none;
+            padding: 4px;
+        }
+
+            .nav-btn.active {
+                color: var(--accent);
+            }
+
+        /* Editor */
+        .editor {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-color);
+            display: none;
+            flex-direction: column;
+            z-index: 50;
+        }
+
+            .editor.show {
+                display: flex;
+            }
+
+        .editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            border-bottom: 1px solid var(--card-border);
+            background: var(--bg-color);
+        }
+
+        .editor-toolbar {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--card-border);
+            background: var(--toolbar-bg);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+            .editor-toolbar button {
+                background: var(--button-bg);
+                border: 1px solid var(--button-border);
+                color: var(--text-main);
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 15px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+                .editor-toolbar button:active {
+                    background: var(--card-border);
+                }
+
+                .editor-toolbar button.active {
+                    background: var(--accent);
+                    color: var(--accent-text);
+                    border-color: var(--accent);
+                }
+
+        #editor-content {
+            flex: 1;
+            padding: 20px 16px;
+            outline: none;
+            color: var(--text-main);
+            overflow-y: auto;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+            #editor-content:empty::before {
+                content: attr(data-placeholder);
+                color: var(--text-muted);
+            }
+
+            #editor-content img {
+                max-width: 100%;
+                height: auto;
+                margin: 12px 0;
+                border-radius: 12px;
+                border: 1px solid var(--card-border);
+            }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+            .checklist-item input[type="checkbox"] {
+                cursor: pointer;
+                width: 20px;
+                height: 20px;
+                accent-color: var(--accent);
+                border-radius: 4px;
+            }
+
+                .checklist-item input[type="checkbox"]:checked + span {
+                    text-decoration: line-through;
+                    color: var(--text-muted);
+                }
+
+        #image-input {
+            display: none;
+        }
+
+        /* Timer section custom elements */
+        .timer-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 4px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            transition: border-color 0.3s ease;
+        }
+
+            .timer-circle.active {
+                border-color: var(--accent);
+                box-shadow: 0 0 25px rgba(201, 245, 66, 0.2);
+            }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-md mx-auto p-5">
+
+        <!-- HEADER APP -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-extrabold lime tracking-tight flex items-center gap-2">
+                    My GYM
+                </h1>
+                <p id="user-greeting" class="text-xs mt-1" style="color: var(--text-muted);">Bienvenido/a, Invitado.</p>
+            </div>
+        </div>
+
+        <!-- TAB 1: RUTINAS -->
+        <div id="tab-rutinas" class="tab-content active">
+            <div class="flex items-center justify-between border-b pb-2.5 mb-4" style="border-color: var(--card-border);">
+                <h2 class="text-lg font-bold flex items-center gap-2">
+                    <i data-lucide="notebook-text" class="w-5 h-5 lime"></i> Rutinas
+                </h2>
+            </div>
+
+            <div id="day-list" class="space-y-3"></div>
+        </div>
+
+        <!-- TAB 2: RELOJ -->
+        <div id="tab-reloj" class="tab-content">
+            <div class="flex items-center justify-between border-b pb-2.5 mb-6" style="border-color: var(--card-border);">
+                <h2 class="text-lg font-bold flex items-center gap-2">
+                    <i data-lucide="timer" class="w-5 h-5 lime"></i> Reloj & Descansos
+                </h2>
+            </div>
+
+            <!-- CRONÓMETRO DE ENTRENAMIENTO -->
+            <div class="p-5 rounded-2xl mb-6 text-center border" style="background: var(--card-bg); border-color: var(--card-border);">
+                <p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--text-muted);">Sesión de Entrenamiento</p>
+                <div id="stopwatch-display" class="text-4xl font-extrabold tracking-mono my-2">00:00:00</div>
+
+                <div class="flex justify-center gap-3 mt-4">
+                    <button id="sw-toggle-btn" onclick="toggleStopwatch()" class="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 bg-lime-accent">
+                        <i data-lucide="play" class="w-4 h-4" id="sw-icon"></i> <span id="sw-status-text">Iniciar</span>
+                    </button>
+                    <button onclick="resetStopwatch()" class="px-4 py-2.5 rounded-xl font-bold border flex items-center gap-2" style="background: var(--button-bg); border-color: var(--button-border); color: var(--text-main);">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TEMPORIZADOR DE DESCANSO -->
+            <div class="p-5 rounded-2xl text-center border" style="background: var(--card-bg); border-color: var(--card-border);">
+                <p class="text-xs font-semibold uppercase tracking-wider mb-4" style="color: var(--text-muted);">Temporizador de Descanso</p>
+
+                <div id="timer-circle" class="timer-circle mb-6">
+                    <span id="rest-display" class="text-4xl font-extrabold">00:00</span>
+                    <span id="rest-label" class="text-xs mt-1 font-medium" style="color: var(--text-muted);">Listo para la serie</span>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2 mb-4">
+                    <button onclick="startRestTimer(30)" class="py-2.5 rounded-xl font-bold text-sm border" style="background: var(--button-bg); border-color: var(--button-border);">30s</button>
+                    <button onclick="startRestTimer(60)" class="py-2.5 rounded-xl font-bold text-sm border" style="background: var(--button-bg); border-color: var(--button-border);">60s</button>
+                    <button onclick="startRestTimer(90)" class="py-2.5 rounded-xl font-bold text-sm border" style="background: var(--button-bg); border-color: var(--button-border);">1m 30s</button>
+                    <button onclick="startRestTimer(120)" class="py-2.5 rounded-xl font-bold text-sm border" style="background: var(--button-bg); border-color: var(--button-border);">2m</button>
+                </div>
+
+                <button onclick="stopRestTimer()" class="w-full py-2.5 rounded-xl font-bold text-sm border text-red-400 border-red-900/30 bg-red-950/20">
+                    Finalizar Temporizador
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 3: CONFIGURACIÓN -->
+        <div id="tab-configuracion" class="tab-content">
+            <div class="flex items-center justify-between border-b pb-2.5 mb-6" style="border-color: var(--card-border);">
+                <h2 class="text-lg font-bold flex items-center gap-2">
+                    <i data-lucide="settings" class="w-5 h-5 lime"></i> Configuración
+                </h2>
+            </div>
+
+            <div class="space-y-4">
+                <!-- PERFIL -->
+                <div class="p-4 rounded-2xl border" style="background: var(--card-bg); border-color: var(--card-border);">
+                    <label class="block text-xs font-semibold mb-2" style="color: var(--text-muted);">Nombre de Usuario</label>
+                    <div class="flex gap-2">
+                        <input id="user-name-input" type="text" placeholder="Tu nombre" class="flex-1 px-3.5 py-2.5 rounded-xl border text-sm font-semibold outline-none" style="background: var(--bg-color); border-color: var(--card-border); color: var(--text-main);">
+                        <button onclick="saveUsername()" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-lime-accent">
+                            Guardar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- APARIENCIA -->
+                <div class="p-4 rounded-2xl border flex items-center justify-between" style="background: var(--card-bg); border-color: var(--card-border);">
+                    <div>
+                        <div class="font-bold text-sm">Modo Claro</div>
+                        <div class="text-xs" style="color: var(--text-muted);">Cambiar el tema de la aplicación</div>
+                    </div>
+                    <button id="theme-toggle-btn" onclick="toggleTheme()" class="px-4 py-2 rounded-xl text-xs font-bold border flex items-center gap-2" style="background: var(--button-bg); border-color: var(--button-border); color: var(--text-main);">
+                        <i data-lucide="sun" class="w-4 h-4"></i> <span id="theme-btn-text">Desactivado</span>
+                    </button>
+                </div>
+
+                <!-- COPIA DE SEGURIDAD -->
+                <div class="p-4 rounded-2xl border space-y-3" style="background: var(--card-bg); border-color: var(--card-border);">
+                    <div>
+                        <div class="font-bold text-sm">Datos y Copia de Seguridad</div>
+                        <div class="text-xs" style="color: var(--text-muted);">Exporta o importa tus rutinas guardadas</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button onclick="exportBackup()" class="py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2" style="background: var(--button-bg); border-color: var(--button-border);">
+                            <i data-lucide="download" class="w-4 h-4 lime"></i> Exportar
+                        </button>
+                        <button onclick="document.getElementById('import-file-input').click()" class="py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2" style="background: var(--button-bg); border-color: var(--button-border);">
+                            <i data-lucide="upload" class="w-4 h-4 lime"></i> Importar
+                        </button>
+                        <input id="import-file-input" type="file" accept=".json" class="hidden" onchange="importBackup(event)">
+                    </div>
+                </div>
+
+                <!-- RESET DATA -->
+                <div class="p-4 rounded-2xl border border-red-900/30 bg-red-950/10 flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-sm text-red-400">Borrar Rutinas</div>
+                        <div class="text-xs text-red-200/60">Eliminar todo el contenido guardado</div>
+                    </div>
+                    <button onclick="clearAllData()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-red-600 text-white">
+                        Borrar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM NAVBAR -->
+    <nav class="bottom-nav">
+        <button id="nav-rutinas" onclick="switchTab('rutinas')" class="nav-btn active">
+            <i data-lucide="notebook" class="w-5 h-5"></i>
+            <span>Rutinas</span>
+        </button>
+
+        <button id="nav-reloj" onclick="switchTab('reloj')" class="nav-btn">
+            <i data-lucide="timer" class="w-5 h-5"></i>
+            <span>Reloj</span>
+        </button>
+
+        <button id="nav-configuracion" onclick="switchTab('configuracion')" class="nav-btn">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+            <span>Ajustes</span>
+        </button>
+    </nav>
+
+    <!-- EDITOR OVERLAY -->
+    <div id="editor" class="editor">
+        <div class="editor-header">
+            <button onclick="closeEditor()" class="p-2 rounded-lg text-sm font-bold flex items-center gap-1" style="color: var(--text-muted);">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i> Volver
+            </button>
+
+            <h3 id="editor-title" class="lime font-extrabold text-lg"></h3>
+
+            <button onclick="save()" class="px-4 py-1.5 rounded-xl text-sm font-bold bg-lime-accent">
+                Guardar
+            </button>
+        </div>
+
+        <div class="editor-toolbar">
+            <button id="bold-btn" onmousedown="event.preventDefault()" onclick="toggleBold()" title="Negrita">
+                <strong>B</strong>
+            </button>
+
+            <button id="italic-btn" onmousedown="event.preventDefault()" onclick="toggleItalic()" title="Itálica">
+                <em>I</em>
+            </button>
+
+            <button onclick="insertImage()" title="Insertar imagen">
+                <i data-lucide="image" class="w-4 h-4"></i>
+            </button>
+
+            <button onclick="insertCheckbox()" title="Añadir checklist">
+                <i data-lucide="check-square" class="w-4 h-4"></i>
+            </button>
+
+            <input id="image-input" type="file" accept="image/*">
+        </div>
+
+        <div id="editor-content" contenteditable="true" data-placeholder="Escribe tu rutina aquí..."></div>
+    </div>
+
+    <script>
+        const DAYS = [
+            "Lunes",
+            "Martes",
+            "Miércoles",
+            "Jueves",
+            "Viernes",
+            "Sábado",
+            "Domingo"
+        ];
+
+        let records = [];
+        let currentDay = null;
+        let isLightMode = false;
+
+        // Timer Variables
+        let restTimerInterval = null;
+        let restSecondsLeft = 0;
+
+        // Stopwatch Variables
+        let swInterval = null;
+        let swSeconds = 0;
+        let swRunning = false;
+
+        // APP INIT
+        function init() {
+            loadSettings();
+            loadRecords();
+            render();
+            lucide.createIcons();
+        }
+
+        // TAB SWITCHING
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            document.getElementById(`nav-${tabId}`).classList.add('active');
+        }
+
+        // LOAD & SAVE RECORDS
+        function loadRecords() {
+            const saved = localStorage.getItem("mygym");
+            records = saved ? JSON.parse(saved) : [];
+        }
+
+        function saveData() {
+            localStorage.setItem("mygym", JSON.stringify(records));
+        }
+
+        function render() {
+            const list = document.getElementById("day-list");
+            list.innerHTML = "";
+
+            const todayName = new Intl.DateTimeFormat('es-ES', { weekday: 'long' }).format(new Date());
+            const formattedToday = todayName.charAt(0).toUpperCase() + todayName.slice(1);
+
+            DAYS.forEach(day => {
+                const rec = records.find(r => r.day === day);
+                const preview = rec ? strip(rec.content).slice(0, 50) : "Sin contenido";
+                const isToday = day === formattedToday;
+
+                const card = document.createElement("button");
+                card.className = `card-day ${isToday ? 'today-card' : ''}`;
+
+                card.innerHTML = `
+              <div>
+                <div class="font-bold flex items-center gap-2">
+                  ${day}
+                  ${isToday ? '<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-lime-accent">HOY</span>' : ''}
+                </div>
+                <div class="text-xs mt-1 text-ellipsis overflow-hidden" style="color: var(--text-muted);">${preview || 'Sin rutina anotada'}</div>
+              </div>
+              <i data-lucide="edit-3" class="w-4 h-4 lime"></i>
+            `;
+
+                card.onclick = () => openEditor(day);
+                list.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        function strip(html) {
+            const div = document.createElement("div");
+            div.innerHTML = html || "";
+            return (div.textContent || "").replace(/\s+/g, " ").trim();
+        }
+
+        // EDITOR FUNCTIONS
+        function openEditor(day) {
+            currentDay = day;
+            const rec = records.find(r => r.day === day);
+            document.getElementById("editor-content").innerHTML = rec?.content || "";
+            document.getElementById("editor-title").textContent = day;
+            document.getElementById("editor").classList.add("show");
+        }
+
+        function closeEditor() {
+            document.getElementById("editor").classList.remove("show");
+            currentDay = null;
+        }
+
+        function toggleBold() {
+            document.execCommand("bold");
+        }
+
+        function toggleItalic() {
+            document.execCommand("italic");
+        }
+
+        function insertImage() {
+            document.getElementById("image-input").click();
+        }
+
+        document.getElementById("image-input").addEventListener("change", function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const img = document.createElement("img");
+                img.src = event.target.result;
+                document.getElementById("editor-content").appendChild(img);
+            };
+            reader.readAsDataURL(file);
+            e.target.value = "";
         });
-      }
 
-      saveData();
-      render();
-      closeEditor();
-    }
+        function insertCheckbox() {
+            const editor = document.getElementById("editor-content");
+            const container = document.createElement("div");
+            container.className = "checklist-item";
+            container.contentEditable = "false";
 
-    load();
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
 
-    // Registrar Service Worker
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("./service-worker.js")
-          .then(() => console.log("✅ Service Worker registrado"))
-          .catch(err => console.error("❌ Error al registrar el Service Worker:", err));
-      });
-    }
-  </script>
+            const label = document.createElement("span");
+            label.textContent = "Nueva serie / ejercicio";
+            label.contentEditable = "true";
+
+            container.appendChild(checkbox);
+            container.appendChild(label);
+            editor.appendChild(container);
+        }
+
+        function save() {
+            if (!currentDay) return;
+            const content = document.getElementById("editor-content").innerHTML;
+            const existing = records.find(r => r.day === currentDay);
+
+            if (existing) {
+                existing.content = content;
+            } else {
+                records.push({ day: currentDay, content });
+            }
+
+            saveData();
+            render();
+            closeEditor();
+        }
+
+        // RELOJ: CRONÓMETRO DE ENTRENAMIENTO
+        function toggleStopwatch() {
+            const statusText = document.getElementById("sw-status-text");
+            const icon = document.getElementById("sw-icon");
+
+            if (swRunning) {
+                clearInterval(swInterval);
+                swRunning = false;
+                statusText.textContent = "Reanudar";
+                icon.setAttribute("data-lucide", "play");
+            } else {
+                swRunning = true;
+                statusText.textContent = "Pausar";
+                icon.setAttribute("data-lucide", "pause");
+
+                swInterval = setInterval(() => {
+                    swSeconds++;
+                    const hrs = String(Math.floor(swSeconds / 3600)).padStart(2, "0");
+                    const mins = String(Math.floor((swSeconds % 3600) / 60)).padStart(2, "0");
+                    const secs = String(swSeconds % 60).padStart(2, "0");
+                    document.getElementById("stopwatch-display").textContent = `${hrs}:${mins}:${secs}`;
+                }, 1000);
+            }
+            lucide.createIcons();
+        }
+
+        function resetStopwatch() {
+            clearInterval(swInterval);
+            swRunning = false;
+            swSeconds = 0;
+            document.getElementById("stopwatch-display").textContent = "00:00:00";
+            document.getElementById("sw-status-text").textContent = "Iniciar";
+            document.getElementById("sw-icon").setAttribute("data-lucide", "play");
+            lucide.createIcons();
+        }
+
+        // RELOJ: TEMPORIZADOR DE DESCANSO
+        function startRestTimer(seconds) {
+            clearInterval(restTimerInterval);
+            restSecondsLeft = seconds;
+
+            const circle = document.getElementById("timer-circle");
+            const display = document.getElementById("rest-display");
+            const label = document.getElementById("rest-label");
+
+            circle.classList.add("active");
+            label.textContent = "Descansando...";
+
+            updateRestDisplay();
+
+            restTimerInterval = setInterval(() => {
+                restSecondsLeft--;
+                updateRestDisplay();
+
+                if (restSecondsLeft <= 0) {
+                    clearInterval(restTimerInterval);
+                    circle.classList.remove("active");
+                    display.textContent = "00:00";
+                    label.textContent = "¡Tiempo finalizado!";
+
+                    if ("vibrate" in navigator) {
+                        navigator.vibrate([300, 150, 300]);
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateRestDisplay() {
+            const mins = String(Math.floor(restSecondsLeft / 60)).padStart(2, "0");
+            const secs = String(restSecondsLeft % 60).padStart(2, "0");
+            document.getElementById("rest-display").textContent = `${mins}:${secs}`;
+        }
+
+        function stopRestTimer() {
+            clearInterval(restTimerInterval);
+            document.getElementById("timer-circle").classList.remove("active");
+            document.getElementById("rest-display").textContent = "00:00";
+            document.getElementById("rest-label").textContent = "Cancelado";
+        }
+
+        // CONFIGURACIÓN: THEME & SETTINGS
+        function loadSettings() {
+            const savedTheme = localStorage.getItem("mygym_theme");
+            if (savedTheme === "light") {
+                isLightMode = true;
+                document.body.classList.add("light-mode");
+                document.getElementById("theme-btn-text").textContent = "Activado";
+                document.getElementById("theme-color-meta").setAttribute("content", "#f4f4f5");
+            }
+
+            const savedName = localStorage.getItem("mygym_username");
+            if (savedName) {
+                document.getElementById("user-name-input").value = savedName;
+                document.getElementById("user-greeting").textContent = `Bienvenido/a, ${savedName}.`;
+            }
+        }
+
+        function toggleTheme() {
+            isLightMode = !isLightMode;
+            if (isLightMode) {
+                document.body.classList.add("light-mode");
+                localStorage.setItem("mygym_theme", "light");
+                document.getElementById("theme-btn-text").textContent = "Activado";
+                document.getElementById("theme-color-meta").setAttribute("content", "#f4f4f5");
+            } else {
+                document.body.classList.remove("light-mode");
+                localStorage.setItem("mygym_theme", "dark");
+                document.getElementById("theme-btn-text").textContent = "Desactivado";
+                document.getElementById("theme-color-meta").setAttribute("content", "#000000");
+            }
+        }
+
+        function saveUsername() {
+            const name = document.getElementById("user-name-input").value.trim();
+            if (name) {
+                localStorage.setItem("mygym_username", name);
+                document.getElementById("user-greeting").textContent = `Bienvenido/a, ${name}.`;
+            }
+        }
+
+        function exportBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(records, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `mygym-backup-${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importBackup(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+                try {
+                    records = JSON.parse(evt.target.result);
+                    saveData();
+                    render();
+                    alert("¡Rutinas restauradas con éxito!");
+                } catch (err) {
+                    alert("Archivo no válido.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            if (confirm("¿Seguro que quieres borrar todas tus rutinas?")) {
+                records = [];
+                saveData();
+                render();
+            }
+        }
+
+        init();
+
+        // SERVICE WORKER
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("./service-worker.js").catch(() => { });
+            });
+        }
+    </script>
 </body>
 </html>
