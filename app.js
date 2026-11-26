@@ -1,292 +1,58 @@
-const $ = (s) => document.querySelector(s);
-const $$ = (s) => [...document.querySelectorAll(s)];
-const KEY = "mygym_21";
-const LEGACY_KEY = "mygym_pre21";
-const defaults = {
-  routines: [], history: [],
-  widgets: ["sessions", "streak", "minutes", "goal"],
-  settings: { name: "", units: "kg", theme: "dark", accent: "lime", weeklyGoal: 3, reminderTime: "" }
-};
-
-function readData() {
-  try {
-    const raw = localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY);
-    if (!raw) return JSON.parse(JSON.stringify(defaults));
-    const parsed = JSON.parse(raw);
-    return {
-      ...defaults, ...parsed,
-      routines: Array.isArray(parsed.routines) ? parsed.routines : [],
-      history: Array.isArray(parsed.history) ? parsed.history : [],
-      widgets: Array.isArray(parsed.widgets) ? parsed.widgets : defaults.widgets.slice(),
-      settings: { ...defaults.settings, ...(parsed.settings || {}) }
-    };
-  } catch (error) {
-    console.warn("No se pudieron leer los datos guardados:", error);
-    return JSON.parse(JSON.stringify(defaults));
-  }
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const KEY="mygym_21_complete_v1", OLD=["mygym_pre21","mygym_21"];
+const LIB=[["Flexiones","Pecho","Peso corporal"],["Press de banca","Pecho","Barra/máquina"],["Remo","Espalda","Mancuerna/máquina"],["Jalón al pecho","Espalda","Polea"],["Sentadilla","Piernas","Peso corporal/barra"],["Zancadas","Piernas","Peso corporal"],["Curl de bíceps","Brazos","Mancuernas"],["Extensión de tríceps","Brazos","Polea"],["Press militar","Hombros","Mancuernas"],["Elevaciones laterales","Hombros","Mancuernas"],["Plancha","Core","Peso corporal"],["Crunch","Core","Peso corporal"],["Bicicleta estática","Cardio","Máquina"],["Cinta","Cardio","Máquina"]];
+const fresh=()=>({routines:[],history:[],exercises:LIB.map(x=>({id:crypto.randomUUID(),name:x[0],muscle:x[1],equipment:x[2],custom:false})),widgets:["sessions","minutes","goal","streak"],settings:{name:"",units:"kg",theme:"dark",accent:"lime",weeklyGoal:3,reminder:""}});
+function load(){try{let raw=localStorage.getItem(KEY);if(!raw)for(const k of OLD){raw=localStorage.getItem(k);if(raw)break}if(!raw)return fresh();const x=JSON.parse(raw),d=fresh();return {...d,...x,routines:(x.routines||[]).map(r=>({...r,id:r.id||crypto.randomUUID(),exercises:Array.isArray(r.exercises)?r.exercises:[],notes:r.notes||""})),history:Array.isArray(x.history)?x.history:[],exercises:Array.isArray(x.exercises)&&x.exercises.length?x.exercises:d.exercises,settings:{...d.settings,...x.settings}}}catch(e){console.error(e);return fresh()}}
+let data=load(),work=null,timer=null,endAt=0,toastTimer;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));return true}catch(e){toast("No se pudieron guardar los datos");return false}}
+function esc(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function toast(s){const n=$("#toast");n.textContent=s;n.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove("show"),2500)}
+function nav(id){$$(".view").forEach(v=>v.classList.toggle("active",v.id===id));$$("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));render();window.scrollTo(0,0)}
+$$("[data-tab]").forEach(b=>b.onclick=()=>nav(b.dataset.tab));
+$("#dialog-form").onsubmit=e=>e.preventDefault();$("#dialog").addEventListener("close",()=>{stopTimer();});
+function modal(s){$("#dialog-content").innerHTML=s;if(!$("#dialog").open)$("#dialog").showModal()}
+function stopTimer(){clearInterval(timer);timer=null}
+function close(){stopTimer();$("#dialog").close()}
+function weekCount(){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));d.setHours(0,0,0,0);return data.history.filter(x=>new Date(x.date)>=d).length}
+function streak(){const set=new Set(data.history.map(x=>new Date(x.date).toLocaleDateString("sv-SE")));let d=new Date(),n=0;if(!set.has(d.toLocaleDateString("sv-SE")))d.setDate(d.getDate()-1);while(set.has(d.toLocaleDateString("sv-SE"))){n++;d.setDate(d.getDate()-1)}return n}
+function achievements(){let n=data.history.length;return [["Primera sesión","Completa tu primer entrenamiento",n>=1],["Constancia","Completa 5 entrenamientos",n>=5],["Diez sesiones","Completa 10 entrenamientos",n>=10],["Objetivo semanal","Alcanza tu objetivo semanal",weekCount()>=(data.settings.weeklyGoal||3)],["Racha de 3 días","Entrena tres días seguidos",streak()>=3]]}
+function render(){
+ let secs=data.history.reduce((a,x)=>a+(Number(x.duration)||0),0),goal=data.settings.weeklyGoal||3;
+ let wd={sessions:["Sesiones",data.history.length,"entrenamientos"],minutes:["Tiempo total",Math.round(secs/60)+" min","tiempo registrado"],goal:["Objetivo semanal",weekCount()+"/"+goal,"sesiones esta semana"],streak:["Racha",streak()+" días","días consecutivos"]};
+ $("#widgets").innerHTML=data.widgets.map(k=>wd[k]).filter(Boolean).map(x=>'<div class="widget"><span>'+x[0]+'</span><strong>'+x[1]+'</strong><span>'+x[2]+'</span></div>').join("");
+ let cards=data.routines.map(r=>'<article class="routine"><div><b>'+esc(r.name)+'</b><p>'+r.exercises.length+' ejercicios · '+esc(r.day||"Sin día")+'</p></div><div class="row"><button data-edit="'+r.id+'">Editar</button><button class="primary" data-start="'+r.id+'">Iniciar</button></div></article>').join("")||'<p class="muted">Aún no tienes rutinas. Crea la primera.</p>';
+ $("#routine-list").innerHTML=cards;$("#home-routines").innerHTML=cards;
+ $("#stats").innerHTML='<div class="widget"><span>Sesiones</span><strong>'+data.history.length+'</strong></div><div class="widget"><span>Tiempo</span><strong>'+Math.round(secs/60)+' min</strong></div><div class="widget"><span>Semana</span><strong>'+weekCount()+'/'+goal+'</strong></div><div class="widget"><span>Racha</span><strong>'+streak()+' días</strong></div>';
+ $("#goal-summary").textContent=weekCount()+" de "+goal+" sesiones esta semana";
+ $("#history-list").innerHTML=data.history.slice().reverse().map(x=>'<article><b>'+esc(x.name)+'</b><p class="muted small">'+new Date(x.date).toLocaleString()+' · '+Math.round((x.duration||0)/60)+' min · '+(x.exerciseCount||0)+' ejercicios</p>'+(x.notes?'<p>'+esc(x.notes)+'</p>':"")+(Array.isArray(x.logs)&&x.logs.length?'<details><summary>Ver detalles del entrenamiento</summary>'+x.logs.map(l=>'<p class="small">'+esc(l.exercise)+' — '+l.sets+'×'+l.reps+' · '+l.weight+' '+esc(data.settings.units)+(l.note?' · '+esc(l.note):"")+'</p>').join("")+'</details>':"")+'</article>').join("")||'<p class="muted">Tu historial aparecerá aquí.</p>';
+ let q=($("#search").value||"").toLowerCase().trim();
+ $("#exercise-list").innerHTML=data.exercises.filter(x=>(x.name+" "+x.muscle+" "+x.equipment).toLowerCase().includes(q)).map(x=>'<article><div><b>'+esc(x.name)+'</b><p class="muted small">'+esc(x.muscle)+' · '+esc(x.equipment)+'</p></div><div class="row"><button data-add-ex="'+x.id+'">＋ Rutina</button>'+(x.custom?'<button data-del-ex="'+x.id+'">Eliminar</button>':"")+'</div></article>').join("")||'<p class="muted">No hay resultados.</p>';
+ $("#achievement-list").innerHTML=achievements().map(x=>'<article><b>'+(x[2]?"🏆":"🔒")+' '+x[0]+'</b><p class="muted small">'+x[1]+'</p></article>').join("");
 }
-let data = readData();
-function save() {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(data));
-    return true;
-  } catch (error) {
-    console.error("No se pudieron guardar los datos:", error);
-    toast("No se pudieron guardar los cambios en este navegador");
-    return false;
-  }
+function editRoutine(id){let r=id?data.routines.find(x=>x.id===id):{name:"",day:"",exercises:[],notes:""};if(!r)return;modal('<h2>'+(id?"Editar rutina":"Nueva rutina")+'</h2><label>Nombre<input id="rn" maxlength="50" value="'+esc(r.name)+'"></label><label>Día<input id="rd" maxlength="24" value="'+esc(r.day)+'"></label><label>Ejercicios (uno por línea)<textarea id="re" rows="6">'+esc(r.exercises.join("\n"))+'</textarea></label><label>Notas<textarea id="rnote">'+esc(r.notes||"")+'</textarea></label><div class="row"><button type="button" id="cancel">Cancelar</button><button type="button" class="primary" id="save-r">Guardar</button></div>'+(id?'<button type="button" id="delete-r">Eliminar rutina</button>':""));
+ $("#cancel").onclick=close;$("#save-r").onclick=()=>{let name=$("#rn").value.trim();if(!name)return toast("Escribe un nombre");let x={id:r.id||crypto.randomUUID(),name,day:$("#rd").value.trim(),exercises:$("#re").value.split("\n").map(x=>x.trim()).filter(Boolean),notes:$("#rnote").value.trim()};if(id)data.routines[data.routines.findIndex(y=>y.id===id)]=x;else data.routines.push(x);save();close();render();toast("Rutina guardada")};
+ if(id)$("#delete-r").onclick=()=>{if(confirm("¿Eliminar rutina?")){data.routines=data.routines.filter(x=>x.id!==id);save();close();render()}};
 }
-function toast(message) {
-  const node = $("#toast");
-  if (!node) return;
-  node.textContent = message;
-  node.classList.add("show");
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => node.classList.remove("show"), 2400);
+$("#new-routine").onclick=()=>editRoutine();$("#quick-add").onclick=()=>editRoutine();
+$("#routine-list").onclick=$("#home-routines").onclick=e=>{let a=e.target.closest("[data-edit]"),b=e.target.closest("[data-start]");if(a)editRoutine(a.dataset.edit);if(b)startWorkout(b.dataset.start)};
+$("#customize").onclick=()=>{modal('<h2>Personalizar inicio</h2>'+[["sessions","Sesiones"],["minutes","Tiempo total"],["goal","Objetivo semanal"],["streak","Racha"]].map(x=>'<label><input type="checkbox" data-widget="'+x[0]+'" '+(data.widgets.includes(x[0])?"checked":"")+'> '+x[1]+'</label>').join("")+'<button type="button" class="primary" id="save-w">Guardar</button>');$("#save-w").onclick=()=>{data.widgets=$$("[data-widget]:checked").map(x=>x.dataset.widget);save();close();render();toast("Inicio personalizado")}};
+$("#search").oninput=render;
+$("#exercise-list").insertAdjacentHTML("beforebegin",'<button id="new-ex" type="button">＋ Crear ejercicio personalizado</button>');
+$("#new-ex").onclick=()=>{modal('<h2>Nuevo ejercicio</h2><label>Nombre<input id="en"></label><label>Grupo muscular<input id="em"></label><label>Material<input id="ee"></label><button type="button" class="primary" id="exsave">Guardar</button>');$("#exsave").onclick=()=>{let name=$("#en").value.trim();if(!name)return toast("Escribe el nombre");data.exercises.push({id:crypto.randomUUID(),name,muscle:$("#em").value.trim()||"General",equipment:$("#ee").value.trim()||"No especificado",custom:true});save();close();render()}};
+$("#exercise-list").onclick=e=>{let add=e.target.closest("[data-add-ex]"),del=e.target.closest("[data-del-ex]");if(add){if(!data.routines.length)return toast("Crea una rutina primero");modal('<h2>Añadir a rutina</h2><select id="target">'+data.routines.map(r=>'<option value="'+r.id+'">'+esc(r.name)+'</option>').join("")+'</select><button class="primary" id="confirm-add" type="button">Añadir</button>');$("#confirm-add").onclick=()=>{let r=data.routines.find(x=>x.id===$("#target").value),ex=data.exercises.find(x=>x.id===add.dataset.addEx);if(r&&ex){r.exercises.push(ex.name);save();close();render();toast("Ejercicio añadido")}}}if(del){data.exercises=data.exercises.filter(x=>x.id!==del.dataset.delEx);save();render()}};
+function startWorkout(id){let r=data.routines.find(x=>x.id===id);if(!r)return;work={r,started:Date.now(),i:0,logs:[],notes:""};drawWorkout()}
+function record(){if(!work)return;let name=work.r.exercises[work.i]||"Entrenamiento";if(work.logs.some(x=>x.i===work.i))return;work.logs.push({i:work.i,exercise:name,sets:+($("#sets").value||3),reps:+($("#reps").value||10),weight:+($("#weight").value||0),note:$("#exnote").value})}
+function drawWorkout(){stopTimer();let r=work.r;modal('<p class="eyebrow">ENTRENAMIENTO EN CURSO</p><h2>'+esc(r.name)+'</h2><p class="muted">Ejercicio '+Math.min(work.i+1,r.exercises.length)+' de '+r.exercises.length+'</p><article><h3>'+esc(r.exercises[work.i]||"Añade ejercicios a esta rutina")+'</h3><div class="grid"><label>Series<input id="sets" type="number" min="1" value="3"></label><label>Repeticiones<input id="reps" type="number" min="1" value="10"></label></div><label>Peso ('+esc(data.settings.units)+')<input id="weight" type="number" min="0" step=".5" value="0"></label><label>Notas<textarea id="exnote" rows="2"></textarea></label><label>Descanso (segundos)<input id="rest" type="number" min="0" value="60"></label><div class="timer-panel"><div id="clock">01:00</div><button id="rest-start" type="button">Iniciar descanso</button></div></article><label>Notas de sesión<textarea id="session-notes">'+esc(work.notes)+'</textarea></label><div class="row"><button id="skip" type="button">Siguiente</button><button id="finish" type="button" class="primary">Finalizar sesión</button></div>');
+ $("#rest-start").onclick=()=>{stopTimer();let left=Math.max(0,+$("#rest").value);if(!left)return toast("Indica el descanso");endAt=Date.now()+left*1000;let tick=()=>{let s=Math.max(0,Math.ceil((endAt-Date.now())/1000));$("#clock").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");if(!s){stopTimer();toast("¡Descanso terminado!");if(navigator.vibrate)navigator.vibrate(150)}};tick();timer=setInterval(tick,250)};
+ $("#skip").onclick=()=>{record();work.notes=$("#session-notes").value;if(work.i<r.exercises.length-1){work.i++;drawWorkout()}else toast("Último ejercicio. Finaliza para guardar.")};
+ $("#finish").onclick=()=>{record();work.notes=$("#session-notes").value;data.history.push({id:crypto.randomUUID(),name:r.name,date:new Date().toISOString(),duration:Math.floor((Date.now()-work.started)/1000),exerciseCount:work.logs.length,logs:work.logs,notes:work.notes});save();work=null;close();render();toast("Sesión guardada en el historial")};
 }
-const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({
-  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-}[c]));
-
-function navigate(id) {
-  $$(".view").forEach((view) => view.classList.toggle("active", view.id === id));
-  $$("[data-tab]").forEach((button) => button.classList.toggle("active", button.dataset.tab === id));
-  render();
-}
-$$("[data-tab]").forEach((button) => button.addEventListener("click", () => navigate(button.dataset.tab)));
-$("#dialog-form").addEventListener("submit", (event) => event.preventDefault());
-
-function openDialog(markup) {
-  $("#dialog-content").innerHTML = markup;
-  const dialog = $("#dialog");
-  if (!dialog.open) dialog.showModal();
-}
-function closeDialog() {
-  const dialog = $("#dialog");
-  if (dialog.open) dialog.close();
-}
-
-const EXERCISES = [
-  { name: "Flexiones", muscle: "Pecho", equipment: "Peso corporal" },
-  { name: "Press de pecho", muscle: "Pecho", equipment: "Mancuernas o máquina" },
-  { name: "Remo", muscle: "Espalda", equipment: "Mancuerna o máquina" },
-  { name: "Jalón al pecho", muscle: "Espalda", equipment: "Polea" },
-  { name: "Sentadilla", muscle: "Piernas", equipment: "Peso corporal o barra" },
-  { name: "Zancadas", muscle: "Piernas", equipment: "Peso corporal" },
-  { name: "Curl de bíceps", muscle: "Brazos", equipment: "Mancuernas" },
-  { name: "Extensión de tríceps", muscle: "Brazos", equipment: "Polea" },
-  { name: "Plancha", muscle: "Core", equipment: "Peso corporal" }
-];
-
-function render() {
-  const sessions = data.history.length;
-  const minutes = data.history.reduce((total, item) => total + (Number(item.duration) || 0), 0);
-  const widgetData = {
-    sessions: ["Sesiones", sessions, "entrenamientos completados"],
-    streak: ["Racha", sessions ? 1 : 0, "días activos registrados"],
-    minutes: ["Tiempo total", Math.round(minutes / 60) + " h", "tiempo entrenando"],
-    goal: ["Objetivo semanal", Math.min(sessions, Number(data.settings.weeklyGoal || 3)) + "/" + Number(data.settings.weeklyGoal || 3), "sesiones objetivo"]
-  };
-  $("#widgets").innerHTML = data.widgets.map((key) => widgetData[key]).filter(Boolean)
-    .map(([title, value, description]) => `<div class="widget"><span>${title}</span><strong>${value}</strong><span>${description}</span></div>`).join("");
-
-  const routineCards = data.routines.map((routine, index) => `
-    <div class="routine"><div><b>${esc(routine.name)}</b><p>${routine.exercises.length} ejercicios · ${esc(routine.day || "Sin día")}</p></div>
-    <div class="row"><button type="button" data-edit="${index}">Editar</button><button type="button" data-start="${index}">Iniciar</button><button type="button" data-delete="${index}" aria-label="Eliminar rutina">✕</button></div></div>
-  `).join("") || '<p class="muted">Aún no tienes rutinas. Crea la primera.</p>';
-  $("#routine-list").innerHTML = routineCards;
-  $("#home-routines").innerHTML = routineCards;
-  $$("[data-edit]").forEach((button) => button.addEventListener("click", () => editRoutine(Number(button.dataset.edit))));
-  $("[data-start]").forEach((button) => button.addEventListener("click", () => startWorkout(Number(button.dataset.start))));
-  $("[data-delete]").forEach((button) => button.addEventListener("click", () => {
-    const index = Number(button.dataset.delete);
-    if (!Number.isInteger(index) || !data.routines[index]) return;
-    if (!confirm("¿Eliminar esta rutina?")) return;
-    data.routines.splice(index, 1); save(); render(); toast("Rutina eliminada");
-  }));
-
-  $("#stats").innerHTML = `<div class="widget"><span>Sesiones</span><strong>${sessions}</strong></div><div class="widget"><span>Tiempo total</span><strong>${Math.round(minutes / 60)} h</strong></div>`;
-  $("#history-list").innerHTML = data.history.slice().reverse().map((item) => `
-    <article><b>${esc(item.name)}</b><p class="muted small">${new Date(item.date).toLocaleString()} · ${Math.round((Number(item.duration) || 0) / 60)} min</p></article>
-  `).join("") || '<p class="muted">Tu historial aparecerá aquí.</p>';
-
-  const query = ($("#search").value || "").trim().toLowerCase();
-  $("#exercise-list").innerHTML = EXERCISES.filter((exercise) => (exercise.name + " " + exercise.muscle).toLowerCase().includes(query))
-    .map((exercise) => `<article><b>${exercise.name}</b><p class="muted small">${exercise.muscle} · ${exercise.equipment}</p><button type="button" data-add-ex="${esc(exercise.name)}">＋ Añadir a rutina</button></article>`).join("");
-  $$("[data-add-ex]").forEach((button) => button.addEventListener("click", () => {
-    if (!data.routines.length) return toast("Crea una rutina primero");
-    openDialog('<h2>Añadir ejercicio</h2><p class="muted">Elige la rutina de destino.</p>' +
-      data.routines.map((routine, index) => '<button type="button" class="routine-choice" data-target-routine="' + index + '">' + esc(routine.name) + '</button>').join("") +
-      '<button type="button" id="cancel-add">Cancelar</button>');
-    $("[data-target-routine]").forEach((choice) => choice.addEventListener("click", () => {
-      const target = data.routines[Number(choice.dataset.targetRoutine)];
-      if (!target) return;
-      target.exercises.push(button.dataset.addEx);
-      save(); closeDialog(); render(); toast("Ejercicio añadido a " + target.name);
-    }));
-    $("#cancel-add").addEventListener("click", closeDialog);
-  }));
-}
-
-function editRoutine(index = -1) {
-  const routine = index < 0 ? { name: "", day: "", exercises: [] } : data.routines[index];
-  openDialog(`
-    <h2>${index < 0 ? "Nueva rutina" : "Editar rutina"}</h2>
-    <label>Nombre<input id="r-name" maxlength="45" value="${esc(routine.name)}" placeholder="Ej. Tren superior"></label>
-    <label>Día<input id="r-day" maxlength="20" value="${esc(routine.day)}" placeholder="Ej. Lunes"></label>
-    <label>Ejercicios (uno por línea)<textarea id="r-ex" rows="5">${esc(routine.exercises.join("\n"))}</textarea></label>
-    <div class="row"><button type="button" id="cancel">Cancelar</button><button type="button" id="save-r" class="primary">Guardar</button></div>
-  `);
-  $("#cancel").addEventListener("click", closeDialog);
-  $("#save-r").addEventListener("click", () => {
-    const name = $("#r-name").value.trim();
-    if (!name) return toast("Escribe un nombre para la rutina");
-    const updated = {
-      name, day: $("#r-day").value.trim(),
-      exercises: $("#r-ex").value.split("\n").map((line) => line.trim()).filter(Boolean)
-    };
-    if (index < 0) data.routines.push(updated);
-    else data.routines[index] = updated;
-    save(); closeDialog(); render(); toast("Rutina guardada");
-  });
-}
-
-function formatTime(seconds) {
-  return String(Math.floor(seconds / 60)).padStart(2, "0") + ":" + String(seconds % 60).padStart(2, "0");
-}
-let restInterval = null;
-function startWorkout(index) {
-  const routine = data.routines[index];
-  if (!routine) return;
-  let exerciseIndex = 0;
-  let captured = false;
-  const records = [];
-  const startedAt = Date.now();
-  function captureExercise() {
-    if (captured) return;
-    records.push({
-      exercise: routine.exercises[exerciseIndex] || "Sesión libre",
-      sets: Math.max(1, Number($("#sets")?.value || 1)),
-      reps: Math.max(1, Number($("#reps")?.value || 1)),
-      weight: Math.max(0, Number($("#weight")?.value || 0)),
-      notes: $("#exercise-notes")?.value.trim() || ""
-    });
-    captured = true;
-  }
-
-  function drawWorkout() {
-    captured = false;
-    clearInterval(restInterval);
-    openDialog(`
-      <p class="eyebrow">MODO ENTRENAMIENTO</p><h2>${esc(routine.name)}</h2>
-      <p class="muted">${routine.exercises.length ? exerciseIndex + 1 : 0} / ${routine.exercises.length} ejercicios</p>
-      <article><h2>${esc(routine.exercises[exerciseIndex] || "Añade ejercicios a esta rutina")}</h2>
-        <label>Series<input id="sets" type="number" min="1" value="3"></label>
-        <label>Repeticiones<input id="reps" type="number" min="1" value="10"></label>
-        <label>Peso (${esc(data.settings.units)})<input id="weight" type="number" min="0" step="0.5" value="0"></label>
-        <label>Notas<textarea id="exercise-notes" rows="2" placeholder="Sensaciones, técnica…"></textarea></label>
-        <label>Descanso (segundos)<input id="rest" type="number" min="0" value="60"></label>
-        <div class="timer-panel"><span class="muted">Descanso</span><div id="clock" style="font-size:27px;font-weight:900;color:var(--a)">01:00</div>
-        <button type="button" id="rest-start">Iniciar descanso</button></div>
-      </article>
-      <div class="row"><button type="button" id="skip">Siguiente</button><button type="button" id="finish" class="primary">Finalizar sesión</button></div>
-    `);
-    $("#skip").addEventListener("click", () => {
-      captureExercise();
-      if (exerciseIndex < routine.exercises.length - 1) { exerciseIndex++; drawWorkout(); }
-      else toast("Has llegado al último ejercicio");
-    });
-    $("#finish").addEventListener("click", () => {
-      captureExercise();
-      clearInterval(restInterval);
-      data.history.push({ name: routine.name, date: new Date().toISOString(), duration: Math.floor((Date.now() - startedAt) / 1000), exercises: routine.exercises.slice(), records });
-      save(); closeDialog(); render(); toast("Sesión guardada en el historial");
-    });
-    $("#rest-start").addEventListener("click", () => {
-      clearInterval(restInterval);
-      let remaining = Math.max(0, Number($("#rest").value) || 0);
-      $("#clock").textContent = formatTime(remaining);
-      if (remaining === 0) return toast("Pon un tiempo de descanso");
-      restInterval = setInterval(() => {
-        remaining--;
-        const clock = $("#clock");
-        if (clock) clock.textContent = formatTime(Math.max(0, remaining));
-        if (remaining <= 0) {
-          clearInterval(restInterval); restInterval = null;
-          if ("Notification" in window && Notification.permission === "granted") new Notification("Descanso terminado", { body: "¡Siguiente serie!" });
-          toast("¡Descanso terminado!");
-        }
-      }, 1000);
-    });
-  }
-  drawWorkout();
-}
-
-$("#new-routine").addEventListener("click", () => editRoutine());
-$("#quick-add").addEventListener("click", () => editRoutine());
-$("#customize").addEventListener("click", () => {
-  openDialog('<h2>Personalizar inicio</h2>' +
-    [["sessions", "Sesiones"], ["streak", "Racha"], ["minutes", "Tiempo total"], ["goal", "Objetivo semanal"]]
-      .map(([id, label]) => `<label><input type="checkbox" data-widget="${id}" ${data.widgets.includes(id) ? "checked" : ""}>${label}</label>`).join("") +
-    '<button type="button" id="widget-save" class="primary">Guardar widgets</button>');
-  $("#widget-save").addEventListener("click", () => {
-    data.widgets = $$("[data-widget]:checked").map((input) => input.dataset.widget);
-    save(); closeDialog(); render(); toast("Inicio personalizado");
-  });
-});
-$("#search").addEventListener("input", render);
-
-function applySettings() {
-  data.settings = {
-    name: $("#username").value,
-    units: $("#units").value,
-    theme: $("#theme").value,
-    accent: $("#accent").value,
-    weeklyGoal: Math.max(1, Math.min(14, Number($("#weekly-goal").value) || 3)),
-    reminderTime: $("#reminder-time").value
-  };
-  document.body.dataset.theme = data.settings.theme;
-  document.body.dataset.accent = data.settings.accent;
-  save();
-}
-$("#username").value = data.settings.name;
-$("#units").value = data.settings.units;
-$("#theme").value = data.settings.theme;
-$("#accent").value = data.settings.accent;
-if ($("#weekly-goal")) $("#weekly-goal").value = data.settings.weeklyGoal || 3;
-if ($("#reminder-time")) $("#reminder-time").value = data.settings.reminderTime || "";
-["username", "units", "theme", "accent", "weekly-goal", "reminder-time"].forEach((id) => $("#" + id).addEventListener("change", applySettings));
-applySettings();
-
-$("#export").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url; anchor.download = "my-gym-2.1-backup.json"; anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-});
-$("#import").addEventListener("click", () => $("#file").click());
-$("#file").addEventListener("change", async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  try {
-    const imported = JSON.parse(await file.text());
-    if (!imported || !Array.isArray(imported.routines) || !Array.isArray(imported.history)) throw new Error("Formato incorrecto");
-    data = { ...defaults, ...imported, settings: { ...defaults.settings, ...(imported.settings || {}) } };
-    save(); applySettings(); render(); toast("Copia importada correctamente");
-  } catch {
-    toast("El archivo no es una copia válida de My GYM");
-  }
-  event.target.value = "";
-});
-$("#pdf").addEventListener("click", () => window.print());
-$("#notify").addEventListener("click", async () => {
-  if (!("Notification" in window)) return toast("Notificaciones no disponibles en este navegador");
-  const permission = await Notification.requestPermission();
-  toast(permission === "granted" ? "Notificaciones activadas" : "Permiso no concedido");
-});
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js?v=2.1.1", { updateViaCache: "none" }).then(reg => reg.update()).catch((error) => console.warn("Service worker:", error)));
-}
-render();
+$("#export").onclick=()=>{let blob=new Blob([JSON.stringify({...data,appVersion:"2.1",exportedAt:new Date().toISOString()},null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="my-gym-2.1-backup.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1200);toast("Copia preparada")};
+$("#import").onclick=()=>$("#file").click();$("#file").onchange=async e=>{let f=e.target.files?.[0];if(!f)return;try{let x=JSON.parse(await f.text());if(!Array.isArray(x.routines)||!Array.isArray(x.history))throw Error();if(!confirm("La importación sustituirá los datos actuales. ¿Continuar?"))return;data={...fresh(),...x,settings:{...fresh().settings,...x.settings}};save();applySettings();render();toast("Copia restaurada")}catch{toast("Archivo JSON no válido")}finally{e.target.value=""}};
+$("#notify").onclick=async()=>{if(!("Notification"in window))return toast("Notificaciones no disponibles");let p=await Notification.requestPermission();toast(p==="granted"?"Notificaciones activadas":"Permiso no concedido")};
+$("#print-report").onclick=()=>window.print();
+function applySettings(){let s=data.settings;document.body.dataset.theme=s.theme;document.body.dataset.accent=s.accent;$("#username").value=s.name||"";$("#units").value=s.units;$("#theme").value=s.theme;$("#accent").value=s.accent;$("#weekly-goal").value=s.weeklyGoal||3;$("#reminder-time").value=s.reminder||""}
+function saveSettings(){data.settings={...data.settings,name:$("#username").value.trim(),units:$("#units").value,theme:$("#theme").value,accent:$("#accent").value,weeklyGoal:Math.max(1,+$("#weekly-goal").value||3),reminder:$("#reminder-time").value};applySettings();save();render();toast("Ajustes guardados")}
+["username","units","theme","accent","weekly-goal","reminder-time"].forEach(id=>$("#"+id).onchange=saveSettings);
+applySettings();render();
+if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
