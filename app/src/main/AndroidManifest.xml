@@ -3,6 +3,7 @@
     <application
         android:allowBackup="true"
         android:label="My GYM"
+        android:icon="@drawable/ic_launcher"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false"
         android:supportsRtl="true">
