@@ -159,9 +159,23 @@ function startWorkout(index) {
   const routine = data.routines[index];
   if (!routine) return;
   let exerciseIndex = 0;
+  let captured = false;
+  const records = [];
   const startedAt = Date.now();
+  function captureExercise() {
+    if (captured) return;
+    records.push({
+      exercise: routine.exercises[exerciseIndex] || "Sesión libre",
+      sets: Math.max(1, Number($("#sets")?.value || 1)),
+      reps: Math.max(1, Number($("#reps")?.value || 1)),
+      weight: Math.max(0, Number($("#weight")?.value || 0)),
+      notes: $("#exercise-notes")?.value.trim() || ""
+    });
+    captured = true;
+  }
 
   function drawWorkout() {
+    captured = false;
     clearInterval(restInterval);
     openDialog(`
       <p class="eyebrow">MODO ENTRENAMIENTO</p><h2>${esc(routine.name)}</h2>
@@ -170,6 +184,7 @@ function startWorkout(index) {
         <label>Series<input id="sets" type="number" min="1" value="3"></label>
         <label>Repeticiones<input id="reps" type="number" min="1" value="10"></label>
         <label>Peso (${esc(data.settings.units)})<input id="weight" type="number" min="0" step="0.5" value="0"></label>
+        <label>Notas<textarea id="exercise-notes" rows="2" placeholder="Sensaciones, técnica…"></textarea></label>
         <label>Descanso (segundos)<input id="rest" type="number" min="0" value="60"></label>
         <div class="timer-panel"><span class="muted">Descanso</span><div id="clock" style="font-size:27px;font-weight:900;color:var(--a)">01:00</div>
         <button type="button" id="rest-start">Iniciar descanso</button></div>
@@ -177,12 +192,14 @@ function startWorkout(index) {
       <div class="row"><button type="button" id="skip">Siguiente</button><button type="button" id="finish" class="primary">Finalizar sesión</button></div>
     `);
     $("#skip").addEventListener("click", () => {
+      captureExercise();
       if (exerciseIndex < routine.exercises.length - 1) { exerciseIndex++; drawWorkout(); }
       else toast("Has llegado al último ejercicio");
     });
     $("#finish").addEventListener("click", () => {
+      captureExercise();
       clearInterval(restInterval);
-      data.history.push({ name: routine.name, date: new Date().toISOString(), duration: Math.floor((Date.now() - startedAt) / 1000), exercises: routine.exercises.slice(), records: routine.exercises.map((exercise, i) => ({ exercise, sets: Number($("#sets")?.value || 3), reps: Number($("#reps")?.value || 10), weight: Number($("#weight")?.value || 0) })) });
+      data.history.push({ name: routine.name, date: new Date().toISOString(), duration: Math.floor((Date.now() - startedAt) / 1000), exercises: routine.exercises.slice(), records });
       save(); closeDialog(); render(); toast("Sesión guardada en el historial");
     });
     $("#rest-start").addEventListener("click", () => {
