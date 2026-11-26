@@ -7,7 +7,7 @@
 <meta name="description" content="My GYM: organiza tus rutinas y registra tu progreso.">
 <title>My GYM · 2.1</title>
 <link rel="manifest" href="./manifest.json">
-<link rel="stylesheet" href="./app.css">
+<link rel="stylesheet" href="./app.css?v=2.1.1">
 </head>
 <body>
 <header>
@@ -46,8 +46,10 @@
     <label>Tema<select id="theme"><option value="dark">Oscuro</option><option value="light">Claro</option></select></label>
     <label>Color<select id="accent"><option value="lime">Verde lima</option><option value="orange">Naranja</option><option value="blue">Azul</option><option value="pink">Rosa</option></select></label>
   </article>
-  <article><h3>Copias de seguridad</h3><button id="export">Exportar JSON</button><button id="import">Importar JSON</button><input id="file" type="file" accept=".json,application/json" hidden></article>
-  <article><button id="notify">Activar notificaciones</button></article>
+  <article><h3>Objetivo semanal</h3><label>Sesiones por semana<input id="weekly-goal" type="number" min="1" max="14" value="3"></label></article>
+  <article><h3>Recordatorio</h3><label>Hora del recordatorio<input id="reminder-time" type="time"></label><p class="muted small">El recordatorio se guarda en este dispositivo. Las notificaciones dependen de los permisos y del navegador.</p><button id="notify">Activar notificaciones</button></article>
+  <article><h3>Copias de seguridad</h3><button id="export">Exportar copia JSON</button><button id="import">Importar copia JSON</button><button id="pdf">Exportar historial PDF</button><input id="file" type="file" accept=".json,application/json" hidden></article>
+  
 </section>
 </main>
 <nav aria-label="Navegación principal">
@@ -59,6 +61,6 @@
 </nav>
 <dialog id="dialog"><form method="dialog" id="dialog-form"><div id="dialog-content"></div></form></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
-<script type="module" src="./app.js"></script>
+<script type="module" src="./app.js?v=2.1.1"></script>
 </body>
 </html>

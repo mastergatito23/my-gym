@@ -1,16 +1,17 @@
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
-const KEY = "mygym_pre21";
+const KEY = "mygym_21";
+const LEGACY_KEY = "mygym_pre21";
 const defaults = {
   routines: [], history: [],
   widgets: ["sessions", "streak", "minutes", "goal"],
-  settings: { name: "", units: "kg", theme: "dark", accent: "lime" }
+  settings: { name: "", units: "kg", theme: "dark", accent: "lime", weeklyGoal: 3, reminderTime: "" }
 };
 
 function readData() {
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return structuredClone(defaults);
+    const raw = localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY);
+    if (!raw) return JSON.parse(JSON.stringify(defaults));
     const parsed = JSON.parse(raw);
     return {
       ...defaults, ...parsed,
@@ -21,7 +22,7 @@ function readData() {
     };
   } catch (error) {
     console.warn("No se pudieron leer los datos guardados:", error);
-    return structuredClone(defaults);
+    return JSON.parse(JSON.stringify(defaults));
   }
 }
 let data = readData();
@@ -84,19 +85,25 @@ function render() {
     sessions: ["Sesiones", sessions, "entrenamientos completados"],
     streak: ["Racha", sessions ? 1 : 0, "días activos registrados"],
     minutes: ["Tiempo total", Math.round(minutes / 60) + " h", "tiempo entrenando"],
-    goal: ["Objetivo semanal", Math.min(sessions, 3) + "/3", "sesiones objetivo"]
+    goal: ["Objetivo semanal", Math.min(sessions, Number(data.settings.weeklyGoal || 3)) + "/" + Number(data.settings.weeklyGoal || 3), "sesiones objetivo"]
   };
   $("#widgets").innerHTML = data.widgets.map((key) => widgetData[key]).filter(Boolean)
     .map(([title, value, description]) => `<div class="widget"><span>${title}</span><strong>${value}</strong><span>${description}</span></div>`).join("");
 
   const routineCards = data.routines.map((routine, index) => `
     <div class="routine"><div><b>${esc(routine.name)}</b><p>${routine.exercises.length} ejercicios · ${esc(routine.day || "Sin día")}</p></div>
-    <div class="row"><button type="button" data-edit="${index}">Editar</button><button type="button" data-start="${index}">Iniciar</button></div></div>
+    <div class="row"><button type="button" data-edit="${index}">Editar</button><button type="button" data-start="${index}">Iniciar</button><button type="button" data-delete="${index}" aria-label="Eliminar rutina">✕</button></div></div>
   `).join("") || '<p class="muted">Aún no tienes rutinas. Crea la primera.</p>';
   $("#routine-list").innerHTML = routineCards;
   $("#home-routines").innerHTML = routineCards;
   $$("[data-edit]").forEach((button) => button.addEventListener("click", () => editRoutine(Number(button.dataset.edit))));
-  $$("[data-start]").forEach((button) => button.addEventListener("click", () => startWorkout(Number(button.dataset.start))));
+  $("[data-start]").forEach((button) => button.addEventListener("click", () => startWorkout(Number(button.dataset.start))));
+  $("[data-delete]").forEach((button) => button.addEventListener("click", () => {
+    const index = Number(button.dataset.delete);
+    if (!Number.isInteger(index) || !data.routines[index]) return;
+    if (!confirm("¿Eliminar esta rutina?")) return;
+    data.routines.splice(index, 1); save(); render(); toast("Rutina eliminada");
+  }));
 
   $("#stats").innerHTML = `<div class="widget"><span>Sesiones</span><strong>${sessions}</strong></div><div class="widget"><span>Tiempo total</span><strong>${Math.round(minutes / 60)} h</strong></div>`;
   $("#history-list").innerHTML = data.history.slice().reverse().map((item) => `
@@ -108,8 +115,16 @@ function render() {
     .map((exercise) => `<article><b>${exercise.name}</b><p class="muted small">${exercise.muscle} · ${exercise.equipment}</p><button type="button" data-add-ex="${esc(exercise.name)}">＋ Añadir a rutina</button></article>`).join("");
   $$("[data-add-ex]").forEach((button) => button.addEventListener("click", () => {
     if (!data.routines.length) return toast("Crea una rutina primero");
-    data.routines[0].exercises.push(button.dataset.addEx);
-    save(); render(); toast("Ejercicio añadido a " + data.routines[0].name);
+    openDialog('<h2>Añadir ejercicio</h2><p class="muted">Elige la rutina de destino.</p>' +
+      data.routines.map((routine, index) => '<button type="button" class="routine-choice" data-target-routine="' + index + '">' + esc(routine.name) + '</button>').join("") +
+      '<button type="button" id="cancel-add">Cancelar</button>');
+    $("[data-target-routine]").forEach((choice) => choice.addEventListener("click", () => {
+      const target = data.routines[Number(choice.dataset.targetRoutine)];
+      if (!target) return;
+      target.exercises.push(button.dataset.addEx);
+      save(); closeDialog(); render(); toast("Ejercicio añadido a " + target.name);
+    }));
+    $("#cancel-add").addEventListener("click", closeDialog);
   }));
 }
 
@@ -144,9 +159,23 @@ function startWorkout(index) {
   const routine = data.routines[index];
   if (!routine) return;
   let exerciseIndex = 0;
+  let captured = false;
+  const records = [];
   const startedAt = Date.now();
+  function captureExercise() {
+    if (captured) return;
+    records.push({
+      exercise: routine.exercises[exerciseIndex] || "Sesión libre",
+      sets: Math.max(1, Number($("#sets")?.value || 1)),
+      reps: Math.max(1, Number($("#reps")?.value || 1)),
+      weight: Math.max(0, Number($("#weight")?.value || 0)),
+      notes: $("#exercise-notes")?.value.trim() || ""
+    });
+    captured = true;
+  }
 
   function drawWorkout() {
+    captured = false;
     clearInterval(restInterval);
     openDialog(`
       <p class="eyebrow">MODO ENTRENAMIENTO</p><h2>${esc(routine.name)}</h2>
@@ -155,6 +184,7 @@ function startWorkout(index) {
         <label>Series<input id="sets" type="number" min="1" value="3"></label>
         <label>Repeticiones<input id="reps" type="number" min="1" value="10"></label>
         <label>Peso (${esc(data.settings.units)})<input id="weight" type="number" min="0" step="0.5" value="0"></label>
+        <label>Notas<textarea id="exercise-notes" rows="2" placeholder="Sensaciones, técnica…"></textarea></label>
         <label>Descanso (segundos)<input id="rest" type="number" min="0" value="60"></label>
         <div class="timer-panel"><span class="muted">Descanso</span><div id="clock" style="font-size:27px;font-weight:900;color:var(--a)">01:00</div>
         <button type="button" id="rest-start">Iniciar descanso</button></div>
@@ -162,12 +192,14 @@ function startWorkout(index) {
       <div class="row"><button type="button" id="skip">Siguiente</button><button type="button" id="finish" class="primary">Finalizar sesión</button></div>
     `);
     $("#skip").addEventListener("click", () => {
+      captureExercise();
       if (exerciseIndex < routine.exercises.length - 1) { exerciseIndex++; drawWorkout(); }
       else toast("Has llegado al último ejercicio");
     });
     $("#finish").addEventListener("click", () => {
+      captureExercise();
       clearInterval(restInterval);
-      data.history.push({ name: routine.name, date: new Date().toISOString(), duration: Math.floor((Date.now() - startedAt) / 1000), exercises: routine.exercises.slice() });
+      data.history.push({ name: routine.name, date: new Date().toISOString(), duration: Math.floor((Date.now() - startedAt) / 1000), exercises: routine.exercises.slice(), records });
       save(); closeDialog(); render(); toast("Sesión guardada en el historial");
     });
     $("#rest-start").addEventListener("click", () => {
@@ -209,7 +241,9 @@ function applySettings() {
     name: $("#username").value,
     units: $("#units").value,
     theme: $("#theme").value,
-    accent: $("#accent").value
+    accent: $("#accent").value,
+    weeklyGoal: Math.max(1, Math.min(14, Number($("#weekly-goal").value) || 3)),
+    reminderTime: $("#reminder-time").value
   };
   document.body.dataset.theme = data.settings.theme;
   document.body.dataset.accent = data.settings.accent;
@@ -219,7 +253,9 @@ $("#username").value = data.settings.name;
 $("#units").value = data.settings.units;
 $("#theme").value = data.settings.theme;
 $("#accent").value = data.settings.accent;
-["username", "units", "theme", "accent"].forEach((id) => $("#" + id).addEventListener("change", applySettings));
+if ($("#weekly-goal")) $("#weekly-goal").value = data.settings.weeklyGoal || 3;
+if ($("#reminder-time")) $("#reminder-time").value = data.settings.reminderTime || "";
+["username", "units", "theme", "accent", "weekly-goal", "reminder-time"].forEach((id) => $("#" + id).addEventListener("change", applySettings));
 applySettings();
 
 $("#export").addEventListener("click", () => {
@@ -243,6 +279,7 @@ $("#file").addEventListener("change", async (event) => {
   }
   event.target.value = "";
 });
+$("#pdf").addEventListener("click", () => window.print());
 $("#notify").addEventListener("click", async () => {
   if (!("Notification" in window)) return toast("Notificaciones no disponibles en este navegador");
   const permission = await Notification.requestPermission();
@@ -250,6 +287,6 @@ $("#notify").addEventListener("click", async () => {
 });
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch((error) => console.warn("Service worker:", error)));
+  window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js?v=2.1.1", { updateViaCache: "none" }).then(reg => reg.update()).catch((error) => console.warn("Service worker:", error)));
 }
 render();

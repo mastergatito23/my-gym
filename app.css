@@ -33,3 +33,6 @@ dialog{width:min(94vw,480px);max-height:88dvh;overflow:auto;background:var(--sur
 @media(min-width:560px){main{padding:36px 24px 44px}#widgets{gap:14px}.widget{min-height:130px;padding:20px}.widget strong{font-size:34px}}
 @media(min-width:760px){body{padding-bottom:22px}header{padding-inline:max(22px,calc((100vw - 680px)/2))}nav{position:sticky;max-width:632px;margin:0 auto 16px;border:1px solid var(--line);border-radius:18px;padding:8px;bottom:auto}nav button{flex-direction:row;font-size:11px;gap:7px;padding:10px}nav button span{font-size:17px}#toast{bottom:25px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+.routine .row button:last-child{padding-inline:10px;color:#ff8b8b}
+.routine-choice{display:block;width:100%;margin:8px 0;text-align:left}
+@media print{header,nav,button,#toast{display:none!important}body{background:#fff!important;color:#111!important;padding:0!important}main{max-width:100%;padding:0}.view{display:none!important}#history.view{display:block!important}article,.widget{break-inside:avoid;box-shadow:none}}
