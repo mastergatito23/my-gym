@@ -1,6 +1,7 @@
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
-const KEY = "mygym_21";\nconst LEGACY_KEY = "mygym_pre21";
+const KEY = "mygym_21";
+const LEGACY_KEY = "mygym_pre21";
 const defaults = {
   routines: [], history: [],
   widgets: ["sessions", "streak", "minutes", "goal"],
@@ -9,7 +10,7 @@ const defaults = {
 
 function readData() {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY);
     if (!raw) return JSON.parse(JSON.stringify(defaults));
     const parsed = JSON.parse(raw);
     return {
@@ -21,7 +22,7 @@ function readData() {
     };
   } catch (error) {
     console.warn("No se pudieron leer los datos guardados:", error);
-    return structuredClone(defaults);
+    return JSON.parse(JSON.stringify(defaults));
   }
 }
 let data = readData();
@@ -224,7 +225,9 @@ function applySettings() {
 $("#username").value = data.settings.name;
 $("#units").value = data.settings.units;
 $("#theme").value = data.settings.theme;
-$("#accent").value = data.settings.accent;\nif ($("#weekly-goal")) $("#weekly-goal").value = data.settings.weeklyGoal || 3;\nif ($("#reminder-time")) $("#reminder-time").value = data.settings.reminderTime || "";
+$("#accent").value = data.settings.accent;
+if ($("#weekly-goal")) $("#weekly-goal").value = data.settings.weeklyGoal || 3;
+if ($("#reminder-time")) $("#reminder-time").value = data.settings.reminderTime || "";
 ["username", "units", "theme", "accent", "weekly-goal", "reminder-time"].forEach((id) => $("#" + id).addEventListener("change", applySettings));
 applySettings();
 
@@ -249,7 +252,8 @@ $("#file").addEventListener("change", async (event) => {
   }
   event.target.value = "";
 });
-$("#pdf").addEventListener("click", () => window.print());\n$("#notify").addEventListener("click", async () => {
+$("#pdf").addEventListener("click", () => window.print());
+$("#notify").addEventListener("click", async () => {
   if (!("Notification" in window)) return toast("Notificaciones no disponibles en este navegador");
   const permission = await Notification.requestPermission();
   toast(permission === "granted" ? "Notificaciones activadas" : "Permiso no concedido");
