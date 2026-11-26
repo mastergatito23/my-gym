@@ -1,16 +1,16 @@
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
-const KEY = "mygym_pre21";
+const KEY = "mygym_21";\nconst LEGACY_KEY = "mygym_pre21";
 const defaults = {
   routines: [], history: [],
   widgets: ["sessions", "streak", "minutes", "goal"],
-  settings: { name: "", units: "kg", theme: "dark", accent: "lime" }
+  settings: { name: "", units: "kg", theme: "dark", accent: "lime", weeklyGoal: 3, reminderTime: "" }
 };
 
 function readData() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return structuredClone(defaults);
+    if (!raw) return JSON.parse(JSON.stringify(defaults));
     const parsed = JSON.parse(raw);
     return {
       ...defaults, ...parsed,
@@ -84,19 +84,25 @@ function render() {
     sessions: ["Sesiones", sessions, "entrenamientos completados"],
     streak: ["Racha", sessions ? 1 : 0, "días activos registrados"],
     minutes: ["Tiempo total", Math.round(minutes / 60) + " h", "tiempo entrenando"],
-    goal: ["Objetivo semanal", Math.min(sessions, 3) + "/3", "sesiones objetivo"]
+    goal: ["Objetivo semanal", Math.min(sessions, Number(data.settings.weeklyGoal || 3)) + "/" + Number(data.settings.weeklyGoal || 3), "sesiones objetivo"]
   };
   $("#widgets").innerHTML = data.widgets.map((key) => widgetData[key]).filter(Boolean)
     .map(([title, value, description]) => `<div class="widget"><span>${title}</span><strong>${value}</strong><span>${description}</span></div>`).join("");
 
   const routineCards = data.routines.map((routine, index) => `
     <div class="routine"><div><b>${esc(routine.name)}</b><p>${routine.exercises.length} ejercicios · ${esc(routine.day || "Sin día")}</p></div>
-    <div class="row"><button type="button" data-edit="${index}">Editar</button><button type="button" data-start="${index}">Iniciar</button></div></div>
+    <div class="row"><button type="button" data-edit="${index}">Editar</button><button type="button" data-start="${index}">Iniciar</button><button type="button" data-delete="${index}" aria-label="Eliminar rutina">✕</button></div></div>
   `).join("") || '<p class="muted">Aún no tienes rutinas. Crea la primera.</p>';
   $("#routine-list").innerHTML = routineCards;
   $("#home-routines").innerHTML = routineCards;
   $$("[data-edit]").forEach((button) => button.addEventListener("click", () => editRoutine(Number(button.dataset.edit))));
-  $$("[data-start]").forEach((button) => button.addEventListener("click", () => startWorkout(Number(button.dataset.start))));
+  $("[data-start]").forEach((button) => button.addEventListener("click", () => startWorkout(Number(button.dataset.start))));
+  $("[data-delete]").forEach((button) => button.addEventListener("click", () => {
+    const index = Number(button.dataset.delete);
+    if (!Number.isInteger(index) || !data.routines[index]) return;
+    if (!confirm("¿Eliminar esta rutina?")) return;
+    data.routines.splice(index, 1); save(); render(); toast("Rutina eliminada");
+  }));
 
   $("#stats").innerHTML = `<div class="widget"><span>Sesiones</span><strong>${sessions}</strong></div><div class="widget"><span>Tiempo total</span><strong>${Math.round(minutes / 60)} h</strong></div>`;
   $("#history-list").innerHTML = data.history.slice().reverse().map((item) => `
@@ -167,7 +173,7 @@ function startWorkout(index) {
     });
     $("#finish").addEventListener("click", () => {
       clearInterval(restInterval);
-      data.history.push({ name: routine.name, date: new Date().toISOString(), duration: Math.floor((Date.now() - startedAt) / 1000), exercises: routine.exercises.slice() });
+      data.history.push({ name: routine.name, date: new Date().toISOString(), duration: Math.floor((Date.now() - startedAt) / 1000), exercises: routine.exercises.slice(), records: routine.exercises.map((exercise, i) => ({ exercise, sets: Number($("#sets")?.value || 3), reps: Number($("#reps")?.value || 10), weight: Number($("#weight")?.value || 0) })) });
       save(); closeDialog(); render(); toast("Sesión guardada en el historial");
     });
     $("#rest-start").addEventListener("click", () => {
@@ -218,8 +224,8 @@ function applySettings() {
 $("#username").value = data.settings.name;
 $("#units").value = data.settings.units;
 $("#theme").value = data.settings.theme;
-$("#accent").value = data.settings.accent;
-["username", "units", "theme", "accent"].forEach((id) => $("#" + id).addEventListener("change", applySettings));
+$("#accent").value = data.settings.accent;\nif ($("#weekly-goal")) $("#weekly-goal").value = data.settings.weeklyGoal || 3;\nif ($("#reminder-time")) $("#reminder-time").value = data.settings.reminderTime || "";
+["username", "units", "theme", "accent", "weekly-goal", "reminder-time"].forEach((id) => $("#" + id).addEventListener("change", applySettings));
 applySettings();
 
 $("#export").addEventListener("click", () => {
@@ -243,13 +249,13 @@ $("#file").addEventListener("change", async (event) => {
   }
   event.target.value = "";
 });
-$("#notify").addEventListener("click", async () => {
+$("#pdf").addEventListener("click", () => window.print());\n$("#notify").addEventListener("click", async () => {
   if (!("Notification" in window)) return toast("Notificaciones no disponibles en este navegador");
   const permission = await Notification.requestPermission();
   toast(permission === "granted" ? "Notificaciones activadas" : "Permiso no concedido");
 });
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch((error) => console.warn("Service worker:", error)));
+  window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js?v=2.1.1", { updateViaCache: "none" }).then(reg => reg.update()).catch((error) => console.warn("Service worker:", error)));
 }
 render();
