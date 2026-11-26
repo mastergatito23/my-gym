@@ -1,1 +1,255 @@
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];const KEY="mygym_pre21";const defaults={routines:[],history:[],widgets:["sessions","streak","minutes","goal"],settings:{name:"",units:"kg",theme:"dark",accent:"lime"}};let data;try{data={...defaults,...JSON.parse(localStorage.getItem(KEY)||"{}")};data.settings={...defaults.settings,...data.settings}}catch{data=structuredClone(defaults)}const save=()=>localStorage.setItem(KEY,JSON.stringify(data));const toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1900)};const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));function navigate(id){$$(".view").forEach(v=>v.classList.toggle("active",v.id===id));$$("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));render()}$$("[data-tab]").forEach(b=>b.onclick=()=>navigate(b.dataset.tab));$("[data-tab='home']").classList.add("active");function openDialog(html){$("#dialog-content").innerHTML=html;$("#dialog").showModal()}function closeDialog(){$("#dialog").close()}function render(){const sessions=data.history.length,mins=data.history.reduce((n,x)=>n+(x.duration||0),0);$("#widgets").innerHTML=data.widgets.map(w=>({sessions:['Sesiones',sessions,'entrenamientos completados'],streak:['Racha',sessions?1:0,'días activos registrados'],minutes:['Tiempo total',Math.round(mins/60)+' h','tiempo entrenando'],goal:['Objetivo semanal',Math.min(sessions,3)+'/3','sesiones objetivo']})[w]).filter(Boolean).map(x=>'<div class="widget"><span>'+x[0]+'</span><strong>'+x[1]+'</strong><span>'+x[2]+'</span></div>').join("");const cards=data.routines.map((r,i)=>'<div class="routine"><div><b>'+esc(r.name)+'</b><p>'+r.exercises.length+' ejercicios · '+esc(r.day||'Sin día')+'</p></div><div class="row"><button data-edit="'+i+'">Editar</button><button data-start="'+i+'">Iniciar</button></div></div>').join("")||'<p class="muted">Aún no tienes rutinas. Crea la primera.</p>';$("#routine-list").innerHTML=cards;$("#home-routines").innerHTML=cards;$$("[data-edit]").forEach(b=>b.onclick=()=>editRoutine(+b.dataset.edit));$$("[data-start]").forEach(b=>b.onclick=()=>startWorkout(+b.dataset.start));$("#stats").innerHTML='<div class="widget"><span>Sesiones</span><strong>'+sessions+'</strong></div><div class="widget"><span>Tiempo total</span><strong>'+Math.round(mins/60)+' h</strong></div>';$("#history-list").innerHTML=data.history.slice().reverse().map(h=>'<article><b>'+esc(h.name)+'</b><p class="muted small">'+new Date(h.date).toLocaleString()+' · '+Math.round(h.duration/60)+' min</p></article>').join("")||'<p class="muted">Tu historial aparecerá aquí.</p>';const q=($("#search")?.value||"").toLowerCase();const ex=EXERCISES.filter(e=>(e.name+' '+e.muscle).toLowerCase().includes(q));$("#exercise-list").innerHTML=ex.map(e=>'<article><b>'+e.name+'</b><p class="muted small">'+e.muscle+' · '+e.equipment+'</p><button data-add-ex="'+e.name+'">＋ Añadir a rutina</button></article>').join("");$$("[data-add-ex]").forEach(b=>b.onclick=()=>{if(!data.routines.length){toast("Crea una rutina primero");return}const r=data.routines[0];r.exercises.push(b.dataset.addEx);save();render();toast("Ejercicio añadido a "+r.name)})}const EXERCISES=[{name:"Flexiones",muscle:"Pecho",equipment:"Peso corporal"},{name:"Press de pecho",muscle:"Pecho",equipment:"Mancuernas o máquina"},{name:"Remo",muscle:"Espalda",equipment:"Mancuerna o máquina"},{name:"Jalón al pecho",muscle:"Espalda",equipment:"Polea"},{name:"Sentadilla",muscle:"Piernas",equipment:"Peso corporal o barra"},{name:"Zancadas",muscle:"Piernas",equipment:"Peso corporal"},{name:"Curl de bíceps",muscle:"Brazos",equipment:"Mancuernas"},{name:"Extensión de tríceps",muscle:"Brazos",equipment:"Polea"},{name:"Plancha",muscle:"Core",equipment:"Peso corporal"}];function editRoutine(i=-1){const r=i<0?{name:"",day:"",exercises:[]}:data.routines[i];openDialog('<h2>'+(i<0?'Nueva rutina':'Editar rutina')+'</h2><label>Nombre<input id="r-name" maxlength="45" value="'+esc(r.name)+'" placeholder="Ej. Tren superior"></label><label>Día<input id="r-day" maxlength="20" value="'+esc(r.day)+'" placeholder="Ej. Lunes"></label><label>Ejercicios (uno por línea)<textarea id="r-ex" rows="5">'+esc(r.exercises.join("\n"))+'</textarea></label><div class="row"><button type="button" id="cancel">Cancelar</button><button class="primary" id="save-r">Guardar</button></div>');$("#cancel").onclick=closeDialog;$("#save-r").onclick=()=>{const name=$("#r-name").value.trim();if(!name){toast("Escribe un nombre");return}const item={name,day:$("#r-day").value.trim(),exercises:$("#r-ex").value.split("\n").map(x=>x.trim()).filter(Boolean)};if(i<0)data.routines.push(item);else data.routines[i]=item;save();closeDialog();render();toast("Rutina guardada")}}function startWorkout(i){const r=data.routines[i];let idx=0,started=Date.now();const draw=()=>openDialog('<p class="eyebrow">MODO ENTRENAMIENTO</p><h2>'+esc(r.name)+'</h2><p class="muted">'+(idx+1)+' / '+Math.max(r.exercises.length,1)+' ejercicios</p><article><h2>'+esc(r.exercises[idx]||"Añade ejercicios a esta rutina")+'</h2><label>Series<input id="sets" type="number" min="1" value="3"></label><label>Repeticiones<input id="reps" type="number" min="1" value="10"></label><label>Peso ('+data.settings.units+')<input id="weight" type="number" min="0" step=".5" value="0"></label><label>Descanso (segundos)<input id="rest" type="number" min="0" value="60"></label><div class="timer-panel"><span class="muted">Descanso</span><div id="clock" style="font-size:27px;font-weight:900;color:var(--a)">01:00</div><button type="button" id="rest-start">Iniciar descanso</button></div></article><div class="row"><button type="button" id="skip">Siguiente</button><button type="button" id="finish" class="primary">Finalizar sesión</button></div>');$("#skip").onclick=()=>{idx++;if(idx>=r.exercises.length){toast("Has llegado al final");idx=Math.max(0,r.exercises.length-1)}draw()};$("#finish").onclick=()=>{data.history.push({name:r.name,date:new Date().toISOString(),duration:Math.floor((Date.now()-started)/1000),exercises:r.exercises.slice()});save();closeDialog();render();toast("Sesión guardada en el historial")};$("#rest-start").onclick=()=>{let left=Math.max(0,Number($("#rest").value)||0);$("#clock").textContent=fmt(left);const timer=setInterval(()=>{left--;$("#clock").textContent=fmt(Math.max(0,left));if(left<=0){clearInterval(timer);if("Notification"in window&&Notification.permission==="granted")new Notification("Descanso terminado",{body:"¡Siguiente serie!"});toast("¡Descanso terminado!")}},1000)}};draw()}function fmt(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}$("#new-routine").onclick=$("#quick-add").onclick=()=>editRoutine();$("#customize").onclick=()=>openDialog('<h2>Personalizar inicio</h2>'+[['sessions','Sesiones'],['streak','Racha'],['minutes','Tiempo total'],['goal','Objetivo semanal']].map(([id,n])=>'<label><input type="checkbox" data-widget="'+id+'" '+(data.widgets.includes(id)?'checked':'')+'>'+n+'</label>').join("")+'<button id="widget-save" class="primary">Guardar widgets</button>');$("#customize").addEventListener("click",()=>setTimeout(()=>{$("#widget-save").onclick=()=>{data.widgets=$$("[data-widget]:checked").map(x=>x.dataset.widget);save();closeDialog();render()}},0));$("#search").oninput=render;$("#username").value=data.settings.name;$("#units").value=data.settings.units;$("#theme").value=data.settings.theme;$("#accent").value=data.settings.accent;function settings(){data.settings={name:$("#username").value,units:$("#units").value,theme:$("#theme").value,accent:$("#accent").value};document.body.dataset.theme=data.settings.theme;document.body.dataset.accent=data.settings.accent;save()}["username","units","theme","accent"].forEach(id=>$("#"+id).onchange=settings);settings();$("#export").onclick=()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="my-gym-pre21-backup.json";a.click();URL.revokeObjectURL(a.href)};$("#import").onclick=()=>$("#file").click();$("#file").onchange=async e=>{try{const x=JSON.parse(await e.target.files[0].text());if(!x||!Array.isArray(x.routines)||!Array.isArray(x.history)||!x.settings)throw Error();data={...defaults,...x,settings:{...defaults.settings,...x.settings}};save();render();toast("Copia importada")}catch{toast("Archivo no válido")}e.target.value=""};$("#notify").onclick=async()=>{if(!("Notification"in window)){toast("Notificaciones no disponibles");return}const p=await Notification.requestPermission();toast(p==="granted"?"Notificaciones activadas":"Permiso no concedido")};if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));render();
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const KEY = "mygym_pre21";
+const defaults = {
+  routines: [], history: [],
+  widgets: ["sessions", "streak", "minutes", "goal"],
+  settings: { name: "", units: "kg", theme: "dark", accent: "lime" }
+};
+
+function readData() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return structuredClone(defaults);
+    const parsed = JSON.parse(raw);
+    return {
+      ...defaults, ...parsed,
+      routines: Array.isArray(parsed.routines) ? parsed.routines : [],
+      history: Array.isArray(parsed.history) ? parsed.history : [],
+      widgets: Array.isArray(parsed.widgets) ? parsed.widgets : defaults.widgets.slice(),
+      settings: { ...defaults.settings, ...(parsed.settings || {}) }
+    };
+  } catch (error) {
+    console.warn("No se pudieron leer los datos guardados:", error);
+    return structuredClone(defaults);
+  }
+}
+let data = readData();
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(data));
+    return true;
+  } catch (error) {
+    console.error("No se pudieron guardar los datos:", error);
+    toast("No se pudieron guardar los cambios en este navegador");
+    return false;
+  }
+}
+function toast(message) {
+  const node = $("#toast");
+  if (!node) return;
+  node.textContent = message;
+  node.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => node.classList.remove("show"), 2400);
+}
+const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+}[c]));
+
+function navigate(id) {
+  $$(".view").forEach((view) => view.classList.toggle("active", view.id === id));
+  $$("[data-tab]").forEach((button) => button.classList.toggle("active", button.dataset.tab === id));
+  render();
+}
+$$("[data-tab]").forEach((button) => button.addEventListener("click", () => navigate(button.dataset.tab)));
+$("#dialog-form").addEventListener("submit", (event) => event.preventDefault());
+
+function openDialog(markup) {
+  $("#dialog-content").innerHTML = markup;
+  const dialog = $("#dialog");
+  if (!dialog.open) dialog.showModal();
+}
+function closeDialog() {
+  const dialog = $("#dialog");
+  if (dialog.open) dialog.close();
+}
+
+const EXERCISES = [
+  { name: "Flexiones", muscle: "Pecho", equipment: "Peso corporal" },
+  { name: "Press de pecho", muscle: "Pecho", equipment: "Mancuernas o máquina" },
+  { name: "Remo", muscle: "Espalda", equipment: "Mancuerna o máquina" },
+  { name: "Jalón al pecho", muscle: "Espalda", equipment: "Polea" },
+  { name: "Sentadilla", muscle: "Piernas", equipment: "Peso corporal o barra" },
+  { name: "Zancadas", muscle: "Piernas", equipment: "Peso corporal" },
+  { name: "Curl de bíceps", muscle: "Brazos", equipment: "Mancuernas" },
+  { name: "Extensión de tríceps", muscle: "Brazos", equipment: "Polea" },
+  { name: "Plancha", muscle: "Core", equipment: "Peso corporal" }
+];
+
+function render() {
+  const sessions = data.history.length;
+  const minutes = data.history.reduce((total, item) => total + (Number(item.duration) || 0), 0);
+  const widgetData = {
+    sessions: ["Sesiones", sessions, "entrenamientos completados"],
+    streak: ["Racha", sessions ? 1 : 0, "días activos registrados"],
+    minutes: ["Tiempo total", Math.round(minutes / 60) + " h", "tiempo entrenando"],
+    goal: ["Objetivo semanal", Math.min(sessions, 3) + "/3", "sesiones objetivo"]
+  };
+  $("#widgets").innerHTML = data.widgets.map((key) => widgetData[key]).filter(Boolean)
+    .map(([title, value, description]) => `<div class="widget"><span>${title}</span><strong>${value}</strong><span>${description}</span></div>`).join("");
+
+  const routineCards = data.routines.map((routine, index) => `
+    <div class="routine"><div><b>${esc(routine.name)}</b><p>${routine.exercises.length} ejercicios · ${esc(routine.day || "Sin día")}</p></div>
+    <div class="row"><button type="button" data-edit="${index}">Editar</button><button type="button" data-start="${index}">Iniciar</button></div></div>
+  `).join("") || '<p class="muted">Aún no tienes rutinas. Crea la primera.</p>';
+  $("#routine-list").innerHTML = routineCards;
+  $("#home-routines").innerHTML = routineCards;
+  $$("[data-edit]").forEach((button) => button.addEventListener("click", () => editRoutine(Number(button.dataset.edit))));
+  $$("[data-start]").forEach((button) => button.addEventListener("click", () => startWorkout(Number(button.dataset.start))));
+
+  $("#stats").innerHTML = `<div class="widget"><span>Sesiones</span><strong>${sessions}</strong></div><div class="widget"><span>Tiempo total</span><strong>${Math.round(minutes / 60)} h</strong></div>`;
+  $("#history-list").innerHTML = data.history.slice().reverse().map((item) => `
+    <article><b>${esc(item.name)}</b><p class="muted small">${new Date(item.date).toLocaleString()} · ${Math.round((Number(item.duration) || 0) / 60)} min</p></article>
+  `).join("") || '<p class="muted">Tu historial aparecerá aquí.</p>';
+
+  const query = ($("#search").value || "").trim().toLowerCase();
+  $("#exercise-list").innerHTML = EXERCISES.filter((exercise) => (exercise.name + " " + exercise.muscle).toLowerCase().includes(query))
+    .map((exercise) => `<article><b>${exercise.name}</b><p class="muted small">${exercise.muscle} · ${exercise.equipment}</p><button type="button" data-add-ex="${esc(exercise.name)}">＋ Añadir a rutina</button></article>`).join("");
+  $$("[data-add-ex]").forEach((button) => button.addEventListener("click", () => {
+    if (!data.routines.length) return toast("Crea una rutina primero");
+    data.routines[0].exercises.push(button.dataset.addEx);
+    save(); render(); toast("Ejercicio añadido a " + data.routines[0].name);
+  }));
+}
+
+function editRoutine(index = -1) {
+  const routine = index < 0 ? { name: "", day: "", exercises: [] } : data.routines[index];
+  openDialog(`
+    <h2>${index < 0 ? "Nueva rutina" : "Editar rutina"}</h2>
+    <label>Nombre<input id="r-name" maxlength="45" value="${esc(routine.name)}" placeholder="Ej. Tren superior"></label>
+    <label>Día<input id="r-day" maxlength="20" value="${esc(routine.day)}" placeholder="Ej. Lunes"></label>
+    <label>Ejercicios (uno por línea)<textarea id="r-ex" rows="5">${esc(routine.exercises.join("\n"))}</textarea></label>
+    <div class="row"><button type="button" id="cancel">Cancelar</button><button type="button" id="save-r" class="primary">Guardar</button></div>
+  `);
+  $("#cancel").addEventListener("click", closeDialog);
+  $("#save-r").addEventListener("click", () => {
+    const name = $("#r-name").value.trim();
+    if (!name) return toast("Escribe un nombre para la rutina");
+    const updated = {
+      name, day: $("#r-day").value.trim(),
+      exercises: $("#r-ex").value.split("\n").map((line) => line.trim()).filter(Boolean)
+    };
+    if (index < 0) data.routines.push(updated);
+    else data.routines[index] = updated;
+    save(); closeDialog(); render(); toast("Rutina guardada");
+  });
+}
+
+function formatTime(seconds) {
+  return String(Math.floor(seconds / 60)).padStart(2, "0") + ":" + String(seconds % 60).padStart(2, "0");
+}
+let restInterval = null;
+function startWorkout(index) {
+  const routine = data.routines[index];
+  if (!routine) return;
+  let exerciseIndex = 0;
+  const startedAt = Date.now();
+
+  function drawWorkout() {
+    clearInterval(restInterval);
+    openDialog(`
+      <p class="eyebrow">MODO ENTRENAMIENTO</p><h2>${esc(routine.name)}</h2>
+      <p class="muted">${routine.exercises.length ? exerciseIndex + 1 : 0} / ${routine.exercises.length} ejercicios</p>
+      <article><h2>${esc(routine.exercises[exerciseIndex] || "Añade ejercicios a esta rutina")}</h2>
+        <label>Series<input id="sets" type="number" min="1" value="3"></label>
+        <label>Repeticiones<input id="reps" type="number" min="1" value="10"></label>
+        <label>Peso (${esc(data.settings.units)})<input id="weight" type="number" min="0" step="0.5" value="0"></label>
+        <label>Descanso (segundos)<input id="rest" type="number" min="0" value="60"></label>
+        <div class="timer-panel"><span class="muted">Descanso</span><div id="clock" style="font-size:27px;font-weight:900;color:var(--a)">01:00</div>
+        <button type="button" id="rest-start">Iniciar descanso</button></div>
+      </article>
+      <div class="row"><button type="button" id="skip">Siguiente</button><button type="button" id="finish" class="primary">Finalizar sesión</button></div>
+    `);
+    $("#skip").addEventListener("click", () => {
+      if (exerciseIndex < routine.exercises.length - 1) { exerciseIndex++; drawWorkout(); }
+      else toast("Has llegado al último ejercicio");
+    });
+    $("#finish").addEventListener("click", () => {
+      clearInterval(restInterval);
+      data.history.push({ name: routine.name, date: new Date().toISOString(), duration: Math.floor((Date.now() - startedAt) / 1000), exercises: routine.exercises.slice() });
+      save(); closeDialog(); render(); toast("Sesión guardada en el historial");
+    });
+    $("#rest-start").addEventListener("click", () => {
+      clearInterval(restInterval);
+      let remaining = Math.max(0, Number($("#rest").value) || 0);
+      $("#clock").textContent = formatTime(remaining);
+      if (remaining === 0) return toast("Pon un tiempo de descanso");
+      restInterval = setInterval(() => {
+        remaining--;
+        const clock = $("#clock");
+        if (clock) clock.textContent = formatTime(Math.max(0, remaining));
+        if (remaining <= 0) {
+          clearInterval(restInterval); restInterval = null;
+          if ("Notification" in window && Notification.permission === "granted") new Notification("Descanso terminado", { body: "¡Siguiente serie!" });
+          toast("¡Descanso terminado!");
+        }
+      }, 1000);
+    });
+  }
+  drawWorkout();
+}
+
+$("#new-routine").addEventListener("click", () => editRoutine());
+$("#quick-add").addEventListener("click", () => editRoutine());
+$("#customize").addEventListener("click", () => {
+  openDialog('<h2>Personalizar inicio</h2>' +
+    [["sessions", "Sesiones"], ["streak", "Racha"], ["minutes", "Tiempo total"], ["goal", "Objetivo semanal"]]
+      .map(([id, label]) => `<label><input type="checkbox" data-widget="${id}" ${data.widgets.includes(id) ? "checked" : ""}>${label}</label>`).join("") +
+    '<button type="button" id="widget-save" class="primary">Guardar widgets</button>');
+  $("#widget-save").addEventListener("click", () => {
+    data.widgets = $$("[data-widget]:checked").map((input) => input.dataset.widget);
+    save(); closeDialog(); render(); toast("Inicio personalizado");
+  });
+});
+$("#search").addEventListener("input", render);
+
+function applySettings() {
+  data.settings = {
+    name: $("#username").value,
+    units: $("#units").value,
+    theme: $("#theme").value,
+    accent: $("#accent").value
+  };
+  document.body.dataset.theme = data.settings.theme;
+  document.body.dataset.accent = data.settings.accent;
+  save();
+}
+$("#username").value = data.settings.name;
+$("#units").value = data.settings.units;
+$("#theme").value = data.settings.theme;
+$("#accent").value = data.settings.accent;
+["username", "units", "theme", "accent"].forEach((id) => $("#" + id).addEventListener("change", applySettings));
+applySettings();
+
+$("#export").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url; anchor.download = "my-gym-2.1-backup.json"; anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+$("#import").addEventListener("click", () => $("#file").click());
+$("#file").addEventListener("change", async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const imported = JSON.parse(await file.text());
+    if (!imported || !Array.isArray(imported.routines) || !Array.isArray(imported.history)) throw new Error("Formato incorrecto");
+    data = { ...defaults, ...imported, settings: { ...defaults.settings, ...(imported.settings || {}) } };
+    save(); applySettings(); render(); toast("Copia importada correctamente");
+  } catch {
+    toast("El archivo no es una copia válida de My GYM");
+  }
+  event.target.value = "";
+});
+$("#notify").addEventListener("click", async () => {
+  if (!("Notification" in window)) return toast("Notificaciones no disponibles en este navegador");
+  const permission = await Notification.requestPermission();
+  toast(permission === "granted" ? "Notificaciones activadas" : "Permiso no concedido");
+});
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch((error) => console.warn("Service worker:", error)));
+}
+render();
