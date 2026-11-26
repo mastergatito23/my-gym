@@ -9,7 +9,7 @@ function esc(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt
 function toast(s){const n=$("#toast");n.textContent=s;n.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove("show"),2500)}
 function nav(id){$$(".view").forEach(v=>v.classList.toggle("active",v.id===id));$$("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));render();window.scrollTo(0,0)}
 $$("[data-tab]").forEach(b=>b.onclick=()=>nav(b.dataset.tab));
-$("#dialog-form").onsubmit=e=>e.preventDefault();
+$("#dialog-form").onsubmit=e=>e.preventDefault();$("#dialog").addEventListener("close",()=>{stopTimer();});
 function modal(s){$("#dialog-content").innerHTML=s;if(!$("#dialog").open)$("#dialog").showModal()}
 function stopTimer(){clearInterval(timer);timer=null}
 function close(){stopTimer();$("#dialog").close()}
@@ -24,7 +24,7 @@ function render(){
  $("#routine-list").innerHTML=cards;$("#home-routines").innerHTML=cards;
  $("#stats").innerHTML='<div class="widget"><span>Sesiones</span><strong>'+data.history.length+'</strong></div><div class="widget"><span>Tiempo</span><strong>'+Math.round(secs/60)+' min</strong></div><div class="widget"><span>Semana</span><strong>'+weekCount()+'/'+goal+'</strong></div><div class="widget"><span>Racha</span><strong>'+streak()+' días</strong></div>';
  $("#goal-summary").textContent=weekCount()+" de "+goal+" sesiones esta semana";
- $("#history-list").innerHTML=data.history.slice().reverse().map(x=>'<article><b>'+esc(x.name)+'</b><p class="muted small">'+new Date(x.date).toLocaleString()+' · '+Math.round((x.duration||0)/60)+' min · '+(x.exerciseCount||0)+' ejercicios</p>'+(x.notes?'<p>'+esc(x.notes)+'</p>':"")+'</article>').join("")||'<p class="muted">Tu historial aparecerá aquí.</p>';
+ $("#history-list").innerHTML=data.history.slice().reverse().map(x=>'<article><b>'+esc(x.name)+'</b><p class="muted small">'+new Date(x.date).toLocaleString()+' · '+Math.round((x.duration||0)/60)+' min · '+(x.exerciseCount||0)+' ejercicios</p>'+(x.notes?'<p>'+esc(x.notes)+'</p>':"")+(Array.isArray(x.logs)&&x.logs.length?'<details><summary>Ver detalles del entrenamiento</summary>'+x.logs.map(l=>'<p class="small">'+esc(l.exercise)+' — '+l.sets+'×'+l.reps+' · '+l.weight+' '+esc(data.settings.units)+(l.note?' · '+esc(l.note):"")+'</p>').join("")+'</details>':"")+'</article>').join("")||'<p class="muted">Tu historial aparecerá aquí.</p>';
  let q=($("#search").value||"").toLowerCase().trim();
  $("#exercise-list").innerHTML=data.exercises.filter(x=>(x.name+" "+x.muscle+" "+x.equipment).toLowerCase().includes(q)).map(x=>'<article><div><b>'+esc(x.name)+'</b><p class="muted small">'+esc(x.muscle)+' · '+esc(x.equipment)+'</p></div><div class="row"><button data-add-ex="'+x.id+'">＋ Rutina</button>'+(x.custom?'<button data-del-ex="'+x.id+'">Eliminar</button>':"")+'</div></article>').join("")||'<p class="muted">No hay resultados.</p>';
  $("#achievement-list").innerHTML=achievements().map(x=>'<article><b>'+(x[2]?"🏆":"🔒")+' '+x[0]+'</b><p class="muted small">'+x[1]+'</p></article>').join("");
