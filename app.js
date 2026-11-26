@@ -115,8 +115,16 @@ function render() {
     .map((exercise) => `<article><b>${exercise.name}</b><p class="muted small">${exercise.muscle} · ${exercise.equipment}</p><button type="button" data-add-ex="${esc(exercise.name)}">＋ Añadir a rutina</button></article>`).join("");
   $$("[data-add-ex]").forEach((button) => button.addEventListener("click", () => {
     if (!data.routines.length) return toast("Crea una rutina primero");
-    data.routines[0].exercises.push(button.dataset.addEx);
-    save(); render(); toast("Ejercicio añadido a " + data.routines[0].name);
+    openDialog('<h2>Añadir ejercicio</h2><p class="muted">Elige la rutina de destino.</p>' +
+      data.routines.map((routine, index) => '<button type="button" class="routine-choice" data-target-routine="' + index + '">' + esc(routine.name) + '</button>').join("") +
+      '<button type="button" id="cancel-add">Cancelar</button>');
+    $("[data-target-routine]").forEach((choice) => choice.addEventListener("click", () => {
+      const target = data.routines[Number(choice.dataset.targetRoutine)];
+      if (!target) return;
+      target.exercises.push(button.dataset.addEx);
+      save(); closeDialog(); render(); toast("Ejercicio añadido a " + target.name);
+    }));
+    $("#cancel-add").addEventListener("click", closeDialog);
   }));
 }
 
@@ -216,7 +224,9 @@ function applySettings() {
     name: $("#username").value,
     units: $("#units").value,
     theme: $("#theme").value,
-    accent: $("#accent").value
+    accent: $("#accent").value,
+    weeklyGoal: Math.max(1, Math.min(14, Number($("#weekly-goal").value) || 3)),
+    reminderTime: $("#reminder-time").value
   };
   document.body.dataset.theme = data.settings.theme;
   document.body.dataset.accent = data.settings.accent;
