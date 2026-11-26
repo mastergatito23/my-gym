@@ -1,66 +1,9 @@
 <!doctype html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b0e0c">
-<meta name="description" content="My GYM: organiza tus rutinas y registra tu progreso.">
-<title>My GYM · 2.1</title>
-<link rel="manifest" href="./manifest.json">
-<link rel="stylesheet" href="./app.css?v=2.1.1">
-</head>
-<body>
-<header>
-  <a class="brand"><b>M</b><span>MY GYM<small>TRAINING COMPANION · 2.1</small></span></a>
-  <button id="quick-add" aria-label="Crear rutina">＋</button>
-</header>
-<main>
-<section id="home" class="view active">
-  <p class="eyebrow">TU ENTRENAMIENTO</p>
-  <h1>Vamos a <em>entrenar.</em></h1>
-  <p class="muted">Tu progreso, a tu ritmo.</p>
-  <div id="widgets" class="grid"></div>
-  <button id="customize" class="link">⚙ Personalizar inicio</button>
-  <h2>Mis rutinas</h2>
-  <div id="home-routines"></div>
-</section>
-<section id="routines" class="view">
-  <p class="eyebrow">PLANIFICACIÓN</p><h1>Mis rutinas</h1>
-  <button id="new-routine" class="primary">＋ Crear rutina</button>
-  <div id="routine-list"></div>
-</section>
-<section id="exercises" class="view">
-  <p class="eyebrow">BIBLIOTECA</p><h1>Ejercicios</h1>
-  <input id="search" placeholder="Buscar ejercicio…" aria-label="Buscar ejercicio">
-  <div id="exercise-list"></div>
-</section>
-<section id="history" class="view">
-  <p class="eyebrow">TU EVOLUCIÓN</p><h1>Historial</h1>
-  <div id="stats" class="grid"></div><div id="history-list"></div>
-</section>
-<section id="settings" class="view">
-  <p class="eyebrow">PERSONALIZACIÓN</p><h1>Ajustes</h1>
-  <article>
-    <label>Nombre<input id="username" placeholder="Tu nombre"></label>
-    <label>Unidades<select id="units"><option>kg</option><option>lb</option></select></label>
-    <label>Tema<select id="theme"><option value="dark">Oscuro</option><option value="light">Claro</option></select></label>
-    <label>Color<select id="accent"><option value="lime">Verde lima</option><option value="orange">Naranja</option><option value="blue">Azul</option><option value="pink">Rosa</option></select></label>
-  </article>
-  <article><h3>Objetivo semanal</h3><label>Sesiones por semana<input id="weekly-goal" type="number" min="1" max="14" value="3"></label></article>
-  <article><h3>Recordatorio</h3><label>Hora del recordatorio<input id="reminder-time" type="time"></label><p class="muted small">El recordatorio se guarda en este dispositivo. Las notificaciones dependen de los permisos y del navegador.</p><button id="notify">Activar notificaciones</button></article>
-  <article><h3>Copias de seguridad</h3><button id="export">Exportar copia JSON</button><button id="import">Importar copia JSON</button><button id="pdf">Exportar historial PDF</button><input id="file" type="file" accept=".json,application/json" hidden></article>
-  
-</section>
-</main>
-<nav aria-label="Navegación principal">
-<button data-tab="home"><span>⌂</span>Inicio</button>
-<button data-tab="routines"><span>▤</span>Rutinas</button>
-<button data-tab="exercises"><span>✣</span>Ejercicios</button>
-<button data-tab="history"><span>◷</span>Historial</button>
-<button data-tab="settings"><span>⚙</span>Ajustes</button>
-</nav>
-<dialog id="dialog"><form method="dialog" id="dialog-form"><div id="dialog-content"></div></form></dialog>
-<div id="toast" role="status" aria-live="polite"></div>
-<script type="module" src="./app.js?v=2.1.1"></script>
-</body>
-</html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090d0b"><meta name="description" content="My GYM 2.1: rutinas, entrenamientos y progreso."><meta name="application-name" content="My GYM 2.1"><meta name="apple-mobile-web-app-capable" content="yes"><title>My GYM · 2.1</title><link rel="manifest" href="./manifest.json"><link rel="stylesheet" href="./app.css?v=21.1"></head><body>
+<header><a class="brand"><b>M</b><span>MY GYM<small>TRAINING COMPANION · 2.1</small></span></a><button id="quick-add" aria-label="Crear rutina">＋</button></header><main>
+<section id="home" class="view active"><p class="eyebrow">TU ENTRENAMIENTO</p><h1>Vamos a <em>entrenar.</em></h1><p class="muted">Tu progreso, a tu ritmo.</p><div id="widgets" class="grid"></div><p id="goal-summary" class="muted"></p><button id="customize" class="link">⚙ Personalizar inicio</button><h2>Mis rutinas</h2><div id="home-routines"></div></section>
+<section id="routines" class="view"><p class="eyebrow">PLANIFICACIÓN</p><h1>Mis rutinas</h1><button id="new-routine" class="primary">＋ Crear rutina</button><div id="routine-list"></div></section>
+<section id="exercises" class="view"><p class="eyebrow">BIBLIOTECA</p><h1>Ejercicios</h1><input id="search" placeholder="Buscar ejercicio…" aria-label="Buscar ejercicio"><div id="exercise-list"></div></section>
+<section id="history" class="view"><p class="eyebrow">TU EVOLUCIÓN</p><h1>Historial</h1><div id="stats" class="grid"></div><button id="print-report" type="button">Imprimir / Guardar PDF</button><h2>Sesiones</h2><div id="history-list"></div><h2>Logros</h2><div id="achievement-list"></div></section>
+<section id="settings" class="view"><p class="eyebrow">PERSONALIZACIÓN</p><h1>Ajustes</h1><article><label>Nombre<input id="username" placeholder="Tu nombre"></label><label>Unidades<select id="units"><option>kg</option><option>lb</option></select></label><label>Tema<select id="theme"><option value="dark">Oscuro</option><option value="light">Claro</option></select></label><label>Color<select id="accent"><option value="lime">Verde lima</option><option value="orange">Naranja</option><option value="blue">Azul</option><option value="pink">Rosa</option></select></label><label>Objetivo semanal<input id="weekly-goal" type="number" min="1" max="14" value="3"></label><label>Recordatorio diario<input id="reminder-time" type="time"></label><button id="notify" type="button">Activar notificaciones</button></article><article><h3>Copias de seguridad</h3><button id="export" type="button">Exportar JSON</button><button id="import" type="button">Importar JSON</button><input id="file" type="file" accept=".json,application/json" hidden></article></section>
+</main><nav aria-label="Navegación principal"><button data-tab="home"><span>⌂</span>Inicio</button><button data-tab="routines"><span>▤</span>Rutinas</button><button data-tab="exercises"><span>✣</span>Ejercicios</button><button data-tab="history"><span>◷</span>Progreso</button><button data-tab="settings"><span>⚙</span>Ajustes</button></nav><dialog id="dialog"><form method="dialog" id="dialog-form"><div id="dialog-content"></div></form></dialog><div id="toast" role="status" aria-live="polite"></div><script type="module" src="./app.js?v=21.1"></script></body></html>
