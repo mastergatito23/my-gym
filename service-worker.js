@@ -1,44 +1,4 @@
-const CACHE = "my-gym-2.1.1";
-const ASSETS = ["./", "./index.html", "./app.css", "./app.js", "./manifest.json"];
-self.addEventListener("install", event => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    await Promise.all(ASSETS.map(async path => {
-      try { const response = await fetch(path, { cache: "reload" }); if (response.ok) await cache.put(path, response); } catch {}
-    }));
-    await self.skipWaiting();
-  })());
-});
-self.addEventListener("activate", event => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)));
-    await self.clients.claim();
-  })());
-});
-self.addEventListener("fetch", event => {
-  const request = event.request;
-  if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
-  const url = new URL(request.url);
-  const isAppAsset = ["document", "script", "style"].includes(request.destination) || /\.(html|css|js)$/.test(url.pathname);
-  if (isAppAsset) {
-    event.respondWith((async () => {
-      try {
-        const fresh = await fetch(request, { cache: "no-store" });
-        if (fresh.ok) {
-          const cache = await caches.open(CACHE);
-          await cache.put(request, fresh.clone());
-        }
-        return fresh;
-      } catch {
-        return (await caches.match(request)) || (await caches.match("./index.html")) || Response.error();
-      }
-    })());
-  } else {
-    event.respondWith((async () => {
-      const cached = await caches.match(request);
-      if (cached) return cached;
-      try { return await fetch(request); } catch { return Response.error(); }
-    })());
-  }
-});
+const CACHE="my-gym-2.1-release-v4",CORE=["./","./index.html","./app.css?v=21.1","./app.js?v=21.1","./manifest.json"];
+self.addEventListener("install",e=>e.waitUntil((async()=>{let c=await caches.open(CACHE);await c.addAll(CORE);await self.skipWaiting()})()));
+self.addEventListener("activate",e=>e.waitUntil((async()=>{for(let k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim()})()));
+self.addEventListener("fetch",e=>{let r=e.request;if(r.method!=="GET"||new URL(r.url).origin!==location.origin)return;let u=new URL(r.url),shell=r.mode==="navigate"||["/","/index.html"].includes(u.pathname)||/\.(js|css)$/.test(u.pathname);if(shell){e.respondWith((async()=>{try{let n=await fetch(r,{cache:"no-store"});if(n.ok)(await caches.open(CACHE)).put(r,n.clone());return n}catch{return(await caches.match(r))||caches.match("./index.html")}})());return}e.respondWith((async()=>{let c=await caches.match(r);if(c)return c;try{return await fetch(r)}catch{return c}})())});
