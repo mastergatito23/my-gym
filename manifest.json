@@ -1,31 +1,16 @@
 {
-  "name": "My GYM: Organiza tu entreno",
+  "name": "My GYM Pre2.1",
   "short_name": "My GYM",
-  "description": "Tu agenda de entreno, ahora en una aplicación para el teléfono. Llévatela a todas partes.",
+  "description": "Vista previa mobile-first de My GYM 2.1",
   "lang": "es",
-  "dir": "ltr",
-
-  "start_url": "/",
-  "scope": "/",
-
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-
-  "background_color": "#000000",
-  "theme_color": "#000000",
-
+  "background_color": "#101510",
+  "theme_color": "#101510",
   "categories": [
     "health-fitness",
-    "productivity",
-    "utilities"
-  ],
-
-  "icons": [
-    {
-      "src": "logo.png",
-      "sizes": "2000x2000",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    "productivity"
   ]
 }
