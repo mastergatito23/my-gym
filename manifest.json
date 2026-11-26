@@ -1,7 +1,7 @@
 {
-  "name": "My GYM Pre2.1",
+  "name": "My GYM 2.1",
   "short_name": "My GYM",
-  "description": "Vista previa mobile-first de My GYM 2.1",
+  "description": "My GYM 2.1: rutinas, entrenamientos y progreso.",
   "lang": "es",
   "start_url": "./",
   "scope": "./",
