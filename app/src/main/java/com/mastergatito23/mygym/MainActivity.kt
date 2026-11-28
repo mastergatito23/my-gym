@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private inner class AndroidBridge {
+    inner class AndroidBridge {
         @JavascriptInterface
         fun requestNotificationPermission() {
             runOnUiThread {
