@@ -1,13 +1,24 @@
 {
-  "name":"My GYM 2.1",
-  "short_name":"My GYM",
-  "description":"Crea rutinas y sigue tus entrenamientos paso a paso.",
-  "lang":"es",
-  "start_url":"./",
-  "scope":"./",
-  "display":"standalone",
-  "orientation":"portrait",
-  "background_color":"#101510",
-  "theme_color":"#101510",
-  "categories":["health-fitness","productivity"]
+  "name": "My GYM 2.2",
+  "short_name": "My GYM",
+  "description": "Crea rutinas y sigue tus entrenamientos paso a paso.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101510",
+  "theme_color": "#101510",
+  "categories": [
+    "health-fitness",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
