@@ -1,4 +1,4 @@
-const CACHE="my-gym-2.1-routines-v5",CORE=["./","./index.html","./app.css?v=21.2","./app.js?v=21.2","./manifest.json"];
+const CACHE="my-gym-2.2-routines-v6",CORE=["./","./index.html","./app.css?v=22.0","./app.js?v=22.0","./manifest.json"];
 self.addEventListener("install",e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.addAll(CORE);await self.skipWaiting()})()));
 self.addEventListener("activate",e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim()})()));
 self.addEventListener("fetch",e=>{const r=e.request;if(r.method!=="GET"||new URL(r.url).origin!==location.origin)return;const u=new URL(r.url),shell=r.mode==="navigate"||["/","/index.html"].includes(u.pathname)||/\.(js|css)$/.test(u.pathname);if(shell){e.respondWith((async()=>{try{const n=await fetch(r,{cache:"no-store"});if(n.ok)(await caches.open(CACHE)).put(r,n.clone());return n}catch{return(await caches.match(r))||caches.match("./index.html")}})());return}e.respondWith((async()=>{const c=await caches.match(r);if(c)return c;try{return await fetch(r)}catch{return c}})())});
